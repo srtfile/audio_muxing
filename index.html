@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HLS Mux Player</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0c0c0e;
+    --surface: #141417;
+    --surface2: #1c1c21;
+    --surface3: #242429;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f2;
+    --muted: #8888a0;
+    --accent: #8b5cf6;
+    --accent-dim: rgba(139,92,246,0.15);
+    --green: #22c55e;
+    --red: #ef4444;
+    --radius: 8px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 16px 48px;
+    gap: 20px;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo svg { width: 20px; height: 20px; fill: #fff; }
+  header h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.2px; }
+  header p  { font-size: 12px; color: var(--muted); }
+
+  /* ── URL Inputs ── */
+  .inputs-card {
+    width: 100%;
+    max-width: 900px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .input-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .input-label .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-video { background: #60a5fa; }
+  .dot-audio { background: #f472b6; }
+
+  input[type="text"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="text"]::placeholder { color: var(--muted); }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 2px;
+  }
+
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 20px;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  button:active { transform: scale(0.97); }
+
+  .btn-play {
+    background: var(--accent);
+    color: #fff;
+    flex: 1;
+  }
+  .btn-play:hover { opacity: 0.88; }
+
+  .btn-clear {
+    background: var(--surface3);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-clear:hover { color: var(--text); border-color: var(--border2); }
+
+  /* ── Player ── */
+  .player-wrap {
+    width: 100%;
+    max-width: 900px;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    display: none;
+  }
+  .player-wrap.visible { display: block; }
+
+  video {
+    width: 100%;
+    display: block;
+    max-height: 540px;
+    background: #000;
+  }
+
+  /* ── Controls bar ── */
+  .controls-bar {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ctrl-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+  }
+
+  .chip {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .chip:hover { border-color: var(--border2); color: var(--text); }
+  .chip.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: #c4b5fd;
+    font-weight: 600;
+  }
+
+  .separator { width: 1px; height: 18px; background: var(--border2); margin: 0 2px; }
+
+  /* ── Status ── */
+  .status-bar {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    min-height: 20px;
+  }
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .status-dot.ok    { background: var(--green); }
+  .status-dot.error { background: var(--red); }
+  .status-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── Sync badge ── */
+  .sync-badge {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--muted);
+    display: none;
+  }
+  .sync-badge.visible { display: block; }
+  .sync-badge .drift { color: var(--green); font-weight: 600; }
+  .sync-badge .drift.warn { color: #f59e0b; }
+
+  /* ── Tips ── */
+  .tips {
+    width: 100%;
+    max-width: 900px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+  }
+  .tip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .tip-icon {
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .tip-text { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .tip-text strong { color: var(--text); display: block; margin-bottom: 2px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 5v14l11-7z"/>
+    </svg>
+  </div>
+  <div>
+    <h1>HLS Mux Player</h1>
+    <p>Merge a soundless video stream with a separate audio track</p>
+  </div>
+</header>
+
+<div class="inputs-card">
+  <div class="input-row">
+    <label class="input-label" for="videoUrl">
+      <span class="dot dot-video"></span> Video stream URL (.m3u8)
+    </label>
+    <input type="text" id="videoUrl" placeholder="https://cdn.example.com/.../video/1080/playlist.m3u8" spellcheck="false"/>
+  </div>
+  <div class="input-row">
+    <label class="input-label" for="audioUrl">
+      <span class="dot dot-audio"></span> Audio stream URL (.m3u8) — optional
+    </label>
+    <input type="text" id="audioUrl" placeholder="https://cdn.example.com/.../audio/1_en/playlist.m3u8" spellcheck="false"/>
+  </div>
+  <div class="btn-row">
+    <button class="btn-play" onclick="startPlayer()">Load &amp; Play</button>
+    <button class="btn-clear" onclick="clearAll()">Clear</button>
+  </div>
+</div>
+
+<div class="status-bar">
+  <div class="status-dot" id="statusDot"></div>
+  <span id="statusText">Paste your stream URLs above and press Load &amp; Play.</span>
+  <span class="sync-badge" id="syncBadge">Drift: <span class="drift" id="driftVal">0.00s</span></span>
+</div>
+
+<div class="player-wrap" id="playerWrap">
+  <video id="video" controls></video>
+  <div class="controls-bar" id="controlsBar" style="display:none;">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Audio</span>
+      <span class="chip active" id="chipAudio" onclick="toggleAudio(this)">On</span>
+    </div>
+    <div class="separator"></div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Volume sync</span>
+      <span class="chip active" id="chipVolSync" onclick="toggleVolSync(this)">On</span>
+    </div>
+    <div class="separator"></div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Resync</span>
+      <button class="chip" onclick="forceResync()">Force now</button>
+    </div>
+  </div>
+</div>
+
+<div class="tips" id="tips">
+  <div class="tip">
+    <div class="tip-icon">🎬</div>
+    <div class="tip-text"><strong>Soundless video URL</strong>Paste the quality playlist, e.g. .../video/1080/playlist.m3u8</div>
+  </div>
+  <div class="tip">
+    <div class="tip-icon">🔊</div>
+    <div class="tip-text"><strong>Separate audio URL</strong>Paste the language track, e.g. .../audio/1_en/playlist.m3u8</div>
+  </div>
+  <div class="tip">
+    <div class="tip-icon">⚡</div>
+    <div class="tip-text"><strong>Auto-sync</strong>Audio stays locked to video. Use "Force now" if you notice drift.</div>
+  </div>
+  <div class="tip">
+    <div class="tip-icon">🌐</div>
+    <div class="tip-text"><strong>CORS notice</strong>Stream servers must allow browser requests. CDN streams usually do.</div>
+  </div>
+</div>
+
+<script>
+const video     = document.getElementById("video");
+const statusDot = document.getElementById("statusDot");
+const statusTxt = document.getElementById("statusText");
+const syncBadge = document.getElementById("syncBadge");
+const driftVal  = document.getElementById("driftVal");
+const playerWrap= document.getElementById("playerWrap");
+const ctrlBar   = document.getElementById("controlsBar");
+const tips      = document.getElementById("tips");
+
+let hlsVideo  = null;
+let hlsAudio  = null;
+let audioEl   = null;
+let syncTimer = null;
+let volSyncOn = true;
+let audioOn   = true;
+
+function setStatus(msg, state) {
+  statusTxt.textContent = msg;
+  statusDot.className   = "status-dot" + (state ? " " + state : "");
+}
+
+function startPlayer() {
+  const videoUrl = document.getElementById("videoUrl").value.trim();
+  const audioUrl = document.getElementById("audioUrl").value.trim();
+
+  if (!videoUrl) { setStatus("Video URL is required.", "error"); return; }
+
+  destroyAll();
+  setStatus("Loading video...", "loading");
+  playerWrap.classList.add("visible");
+  tips.style.display = "none";
+
+  if (!Hls.isSupported()) {
+    setStatus("HLS not supported in this browser.", "error");
+    return;
+  }
+
+  hlsVideo = new Hls({ enableWorker: true, lowLatencyMode: false });
+  hlsVideo.loadSource(videoUrl);
+  hlsVideo.attachMedia(video);
+
+  hlsVideo.on(Hls.Events.MANIFEST_PARSED, () => {
+    if (audioUrl) {
+      loadAudio(audioUrl);
+    } else {
+      setStatus("Video loaded — no audio URL provided, playing video only.", "ok");
+      ctrlBar.style.display = "none";
+    }
+    video.play().catch(() => {});
+  });
+
+  hlsVideo.on(Hls.Events.ERROR, (_, d) => {
+    if (d.fatal) setStatus("Video error: " + d.details, "error");
+  });
+}
+
+function loadAudio(url) {
+  audioEl = new Audio();
+  audioEl.volume = video.volume;
+  audioEl.muted  = false;
+
+  hlsAudio = new Hls();
+  hlsAudio.loadSource(url);
+  hlsAudio.attachMedia(audioEl);
+
+  hlsAudio.on(Hls.Events.MANIFEST_PARSED, () => {
+    audioEl.currentTime = video.currentTime;
+    if (!video.paused) audioEl.play().catch(() => {});
+    attachEvents();
+    startSyncLoop();
+    ctrlBar.style.display = "flex";
+    setStatus("Playing — video + audio synced.", "ok");
+    syncBadge.classList.add("visible");
+  });
+
+  hlsAudio.on(Hls.Events.ERROR, (_, d) => {
+    if (d.fatal) setStatus("Audio error: " + d.details + " — playing video only.", "error");
+  });
+}
+
+function attachEvents() {
+  video.addEventListener("play",   onPlay);
+  video.addEventListener("pause",  onPause);
+  video.addEventListener("seeked", onSeeked);
+  video.addEventListener("volumechange", onVolChange);
+}
+
+function onPlay()       { if (audioEl && audioOn) { audioEl.currentTime = video.currentTime; audioEl.play().catch(()=>{}); } }
+function onPause()      { if (audioEl) audioEl.pause(); }
+function onSeeked()     { if (audioEl) { audioEl.currentTime = video.currentTime; if (!video.paused && audioOn) audioEl.play().catch(()=>{}); } }
+function onVolChange()  { if (audioEl && volSyncOn) audioEl.volume = video.volume; }
+
+function startSyncLoop() {
+  if (syncTimer) clearInterval(syncTimer);
+  syncTimer = setInterval(() => {
+    if (!audioEl) return;
+    const drift = Math.abs(audioEl.currentTime - video.currentTime);
+    driftVal.textContent = drift.toFixed(2) + "s";
+    driftVal.className = "drift" + (drift > 0.5 ? " warn" : "");
+    if (drift > 0.5) { audioEl.currentTime = video.currentTime; }
+  }, 500);
+}
+
+function forceResync() {
+  if (!audioEl) return;
+  audioEl.currentTime = video.currentTime;
+  if (!video.paused && audioOn) audioEl.play().catch(() => {});
+  setStatus("Resynced audio to video.", "ok");
+}
+
+function toggleAudio(chip) {
+  audioOn = !audioOn;
+  chip.textContent = audioOn ? "On" : "Off";
+  chip.classList.toggle("active", audioOn);
+  if (!audioEl) return;
+  if (audioOn) {
+    audioEl.currentTime = video.currentTime;
+    if (!video.paused) audioEl.play().catch(() => {});
+  } else {
+    audioEl.pause();
+  }
+}
+
+function toggleVolSync(chip) {
+  volSyncOn = !volSyncOn;
+  chip.textContent = volSyncOn ? "On" : "Off";
+  chip.classList.toggle("active", volSyncOn);
+}
+
+function destroyAll() {
+  if (syncTimer) { clearInterval(syncTimer); syncTimer = null; }
+  video.removeEventListener("play",         onPlay);
+  video.removeEventListener("pause",        onPause);
+  video.removeEventListener("seeked",       onSeeked);
+  video.removeEventListener("volumechange", onVolChange);
+  if (hlsAudio) { hlsAudio.destroy(); hlsAudio = null; }
+  if (hlsVideo) { hlsVideo.destroy(); hlsVideo = null; }
+  if (audioEl)  { audioEl.pause(); audioEl = null; }
+  video.src = "";
+  syncBadge.classList.remove("visible");
+}
+
+function clearAll() {
+  destroyAll();
+  playerWrap.classList.remove("visible");
+  ctrlBar.style.display = "none";
+  tips.style.display = "grid";
+  document.getElementById("videoUrl").value = "";
+  document.getElementById("audioUrl").value = "";
+  setStatus("Paste your stream URLs above and press Load & Play.");
+}
+
+document.getElementById("videoUrl").addEventListener("keydown", e => { if (e.key === "Enter") startPlayer(); });
+document.getElementById("audioUrl").addEventListener("keydown", e => { if (e.key === "Enter") startPlayer(); });
+</script>
+
+</body>
+</html>
