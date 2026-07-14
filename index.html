@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Advanced AV Sync Player</title>
+<title>Advanced AV Sync Player (Relaxed Sync)</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -97,7 +97,7 @@ video{width:100%;display:block;max-height:540px;background:#000}
   <div class="logo"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
   <div class="header-text">
     <h1>Advanced AV Sync Player</h1>
-    <p>Mux discrete structural video and external audio files together into a synchronized timeline.</p>
+    <p>Mux discrete video and external audio files together with a relaxed error-tolerant layout.</p>
   </div>
 </header>
 
@@ -106,12 +106,12 @@ video{width:100%;display:block;max-height:540px;background:#000}
     <div class="input-row">
       <label class="input-label" for="videoUrl"><span class="dot dot-v"></span> Video URL (Visual Layer)</label>
       <input type="text" id="videoUrl" placeholder="https://example.com/video.mp4" spellcheck="false"/>
-      <span class="hint">Direct link to an <code>.mp4</code>, <code>.webm</code>, or <code>.mov</code> stream. (Native audio track will be auto-muted).</span>
+      <span class="hint">Direct link to an <code>.mp4</code>, <code>.webm</code>, or <code>.mov</code> stream.</span>
     </div>
     <div class="input-row">
       <label class="input-label" for="audioUrl"><span class="dot dot-a"></span> Audio URL (Acoustic Layer)</label>
       <input type="text" id="audioUrl" placeholder="https://example.com/audio.mp3" spellcheck="false"/>
-      <span class="hint"><code>.mp3</code>, <code>.m4a</code>, <code>.wav</code>, or <code>.ogg</code> stream — frame-locked to the video track via event mitigation loops.</span>
+      <span class="hint"><code>.mp3</code>, <code>.m4a</code>, <code>.wav</code>, or <code>.ogg</code> stream — calibrated with relaxed drift rules.</span>
     </div>
   </div>
 
@@ -136,7 +136,7 @@ video{width:100%;display:block;max-height:540px;background:#000}
     <audio id="audio" preload="auto" style="display:none"></audio>
     
     <div class="overlay" id="playOverlay">
-      <button class="overlay-btn" onclick="manualPlay()">▶ Initialize Core Playback</button>
+      <button class="overlay-btn" onclick="manualPlay()">▶ Initialize Playback</button>
     </div>
     
     <div class="overlay" id="bufferOverlay">
@@ -184,16 +184,12 @@ video{width:100%;display:block;max-height:540px;background:#000}
 
 <div class="tips" id="tips">
   <div class="tip">
+    <div class="tip-icon">🩹</div>
+    <div class="tip-text"><strong>Relaxed Sync Tuning</strong>The drift threshold is expanded to $0.85\text{ s}$ to stop choppy sound cycles, rendering audio drops much cleaner.</div>
+  </div>
+  <div class="tip">
     <div class="tip-icon">🛡️</div>
-    <div class="tip-text"><strong>Interlocked Braking Engine</strong>If either the video stream or audio channel encounters standard networking lag or halts, both playback timelines instantly halt simultaneously to preserve perfect cohesion.</div>
-  </div>
-  <div class="tip">
-    <div class="tip-icon">⏱️</div>
-    <div class="tip-text"><strong>Active Drift Calibration</strong>The backend compares running frame times at high frequency ($200\text{ ms}$). If temporal drifting exceeds $\pm 0.12$ seconds, phase adjustment executes instantly.</div>
-  </div>
-  <div class="tip">
-    <div class="tip-icon">⌨️</div>
-    <div class="tip-text"><strong>Shortcuts (Focused)</strong>Spacebar toggles global play status. Left/Right Arrow keys execute step seeks. Up/Down handles acoustic range controls.</div>
+    <div class="tip-text"><strong>Interlocked Brake System</strong>If either element pauses or hits a severe stall, the player safely pauses both nodes instantly until recovered.</div>
   </div>
 </div>
 
@@ -216,7 +212,9 @@ const infoBanner = document.getElementById("infoBanner");
 let hasAudioMux = false;
 let driftInterval = null;
 let isStalled = false;
-const DRIFT_THRESHOLD = 0.12; 
+
+// Expanded window limits hard sync adjustments to let problematic audio recover
+const DRIFT_THRESHOLD = 0.85; 
 
 function setStatus(msg, state) {
   statusTxt.textContent = msg;
@@ -265,7 +263,7 @@ async function startPlayer() {
   }
 
   if (window.location.protocol === "https:" && (vUrl.startsWith("http://") || (aUrl && aUrl.startsWith("http://")))) {
-    showDiag("<strong>Security Blocked (Mixed Content):</strong> Secure zones cannot access raw <code>http://</code> pathways safely.");
+    showDiag("<strong>Security Blocked:</strong> HTTPS configurations restrict mixed HTTP content requests.");
     setStatus("Mixed content blocked.", "error");
     playBtn.disabled = false;
     return;
@@ -287,7 +285,6 @@ async function startPlayer() {
 
     await Promise.all(queue);
 
-    // Dynamic control panel setup
     video.muted = hasAudioMux; 
     if (hasAudioMux) {
       syncBadge.classList.add("on");
@@ -295,7 +292,7 @@ async function startPlayer() {
       document.getElementById("volSep").style.display = "block";
       document.getElementById("resyncGroup").style.display = "flex";
       document.getElementById("resyncSep").style.display = "block";
-      setStatus("Engine Active — Multi-track locked.", "ok");
+      setStatus("Engine Active — Relaxed track alignment active.", "ok");
       bindMuxSync();
     } else {
       syncBadge.classList.remove("on");
@@ -303,23 +300,23 @@ async function startPlayer() {
       document.getElementById("volSep").style.display = "none";
       document.getElementById("resyncGroup").style.display = "none";
       document.getElementById("resyncSep").style.display = "none";
-      setStatus("Engine Active — Monolithic channel running.", "ok");
+      setStatus("Engine Active — Video track online.", "ok");
     }
 
     showBuf(false);
-    ctrlBar.classList.add("on"); // Make sure control panel is fully active and showing
+    ctrlBar.classList.add("on"); 
     bindMuxBrakes();
     attemptPlayback();
   } catch (err) {
     showBuf(false);
     setStatus("Asset extraction failure.", "error");
-    showDiag("<strong>Media pipeline could not clear:</strong> Cross-Origin Resource Sharing (CORS) exceptions, standard media parsing degradation, or down channels could cause this.");
+    showDiag("<strong>Media pipeline could not clear:</strong> Verify formatting parameters, cross-origin rules (CORS), or link uptime.");
   } finally {
     playBtn.disabled = false;
   }
 }
 
-/* Interlocked Braking Engine logic */
+/* Interlocked Safety Braking */
 function bindMuxBrakes() {
   const triggerStall = () => {
     if (!video.paused || (hasAudioMux && !audio.paused)) {
@@ -336,14 +333,12 @@ function bindMuxBrakes() {
     }
   };
 
-  // Video stall sensors
   video.addEventListener("waiting", triggerStall, { passive: true });
   video.addEventListener("stalled", triggerStall, { passive: true });
   video.addEventListener("playing", () => showBuf(false), { passive: true });
   video.addEventListener("canplay", clearStall, { passive: true });
 
   if (hasAudioMux) {
-    // Audio stall sensors
     audio.addEventListener("waiting", triggerStall, { passive: true });
     audio.addEventListener("stalled", triggerStall, { passive: true });
     audio.addEventListener("playing", () => showBuf(false), { passive: true });
@@ -351,9 +346,8 @@ function bindMuxBrakes() {
   }
 }
 
-/* Advanced Bidirectional Frame Syncing Engine */
+/* Loose Phase Alignment Mechanics */
 function bindMuxSync() {
-  // Sync core control systems
   video.addEventListener("play", () => {
     if (isStalled) return;
     audio.currentTime = video.currentTime;
@@ -372,7 +366,6 @@ function bindMuxSync() {
     audio.playbackRate = video.playbackRate;
   });
 
-  // Explicit back-check: if audio pauses unexpectedly or user forces it, halt video
   audio.addEventListener("pause", () => {
     if (!video.paused && !isStalled) {
       video.pause();
@@ -387,7 +380,7 @@ function bindMuxSync() {
 
   if (driftInterval) clearInterval(driftInterval);
   
-  // High-frequency drift investigation pass (200ms increments)
+  // Relaxed execution checks (600ms resolution windows)
   driftInterval = setInterval(() => {
     if (video.paused || audio.paused || isStalled) return;
     
@@ -398,10 +391,10 @@ function bindMuxSync() {
     driftEl.classList.toggle("warn", driftViolation);
     
     if (driftViolation) {
-      // Hard frame phase alignment check
+      // Soft tracking re-alignment hook
       audio.currentTime = video.currentTime;
     }
-  }, 200);
+  }, 600);
 }
 
 function setAudioVolume(val) {
@@ -415,7 +408,7 @@ function forceResync() {
   if (!video.paused) {
     audio.play().catch(() => {});
   }
-  showInfo("🔁 Active Track alignment applied manually.");
+  showInfo("🔁 Active Manual track alignment run complete.");
 }
 
 function attemptPlayback() {
@@ -459,7 +452,7 @@ async function togglePip() {
       await video.requestPictureInPicture();
     }
   } catch {
-    showInfo("System alert: Picture-in-Picture mode not accessible on this device architecture.");
+    showInfo("System alert: PiP framework unavailable on current system setup.");
   }
 }
 
@@ -486,74 +479,4 @@ function destroyEngine(keepActiveWrapper) {
   
   if (!keepActiveWrapper) {
     playerWrap.classList.remove("on");
-    ctrlBar.classList.remove("on");
-  }
-}
-
-function clearAll() {
-  destroyEngine(false);
-  hideDiag();
-  hideInfo();
-  tips.style.display = "grid";
-  document.getElementById("videoUrl").value = "";
-  document.getElementById("audioUrl").value = "";
-  setStatus("Provide valid target asset URLs, then execute the Sync Player.");
-}
-
-// Global Keyboard Navigation Mappings
-document.addEventListener("keydown", e => {
-  if (e.target.tagName === "INPUT") {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      startPlayer();
-    }
-    return;
-  }
-  
-  if (!playerWrap.classList.contains("on")) return;
-
-  if (e.key === " ") {
-    e.preventDefault();
-    if (video.paused) {
-      video.play().catch(() => {});
-      if (hasAudioMux) audio.play().catch(() => {});
-    } else {
-      video.pause();
-      if (hasAudioMux) audio.pause();
-    }
-  }
-  if (e.key === "ArrowLeft") {
-    e.preventDefault();
-    video.currentTime = Math.max(0, video.currentTime - 5);
-    if (hasAudioMux) audio.currentTime = video.currentTime;
-  }
-  if (e.key === "ArrowRight") {
-    e.preventDefault();
-    video.currentTime = Math.min(video.duration || video.currentTime + 5, video.currentTime + 5);
-    if (hasAudioMux) audio.currentTime = video.currentTime;
-  }
-  if (e.key === "ArrowUp") {
-    e.preventDefault();
-    const currentVol = hasAudioMux ? audio.volume : video.volume;
-    const nextVol = Math.min(1, currentVol + 0.1);
-    setAudioVolume(nextVol);
-    document.getElementById("audioVol").value = nextVol;
-  }
-  if (e.key === "ArrowDown") {
-    e.preventDefault();
-    const currentVol = hasAudioMux ? audio.volume : video.volume;
-    const nextVol = Math.max(0, currentVol - 0.1);
-    setAudioVolume(nextVol);
-    document.getElementById("audioVol").value = nextVol;
-  }
-  if (e.key === "m" || e.key === "M") {
-    if (hasAudioMux) audio.muted = !audio.muted;
-    else video.muted = !video.muted;
-  }
-  if (e.key === "f" || e.key === "F") {
-    if (video.requestFullscreen) video.requestFullscreen();
-  }
-});
-</script>
-</body>
-</html>
+    ctrlBar.classList.
