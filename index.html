@@ -308,6 +308,31 @@
   }
   .tip-text { font-size: 12px; color: var(--muted); line-height: 1.5; }
   .tip-text strong { color: var(--text); display: block; margin-bottom: 2px; font-size: 12px; }
+
+  /* ── Diagnostic banner ── */
+  .diag {
+    width: 100%;
+    max-width: 900px;
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.35);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--text);
+    display: none;
+  }
+  .diag.visible { display: block; }
+  .diag strong { color: var(--red); }
+  .diag code {
+    background: var(--surface3);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: 'Consolas','Courier New',monospace;
+    font-size: 11.5px;
+  }
+  .diag ul { margin: 6px 0 0 18px; }
+  .diag li { margin-bottom: 3px; }
 </style>
 </head>
 <body>
@@ -384,6 +409,8 @@
   </div>
 </div>
 
+<div class="diag" id="diagBox"></div>
+
 <div class="tips" id="tips">
   <div class="tip">
     <div class="tip-icon">🎬</div>
@@ -418,6 +445,7 @@ const playBtn      = document.getElementById("playBtn");
 const qualityGroup = document.getElementById("qualityGroup");
 const qualitySep   = document.getElementById("qualitySep");
 const qualityChips = document.getElementById("qualityChips");
+const diagBox      = document.getElementById("diagBox");
 
 let hlsVideo   = null;
 let hlsAudio   = null;
@@ -427,6 +455,18 @@ let volSyncOn  = true;
 let audioOn    = true;
 let usingSeparateAudio = false;
 let nativeHls  = false; // Safari native playback path
+let videoRetries = 0;
+let audioRetries = 0;
+const MAX_RETRIES = 3;
+
+function showDiag(html) {
+  diagBox.innerHTML = html;
+  diagBox.classList.add("visible");
+}
+function hideDiag() {
+  diagBox.classList.remove("visible");
+  diagBox.innerHTML = "";
+}
 
 function setStatus(msg, state) {
   statusTxt.textContent = msg;
@@ -445,12 +485,31 @@ function startPlayer() {
   if (!videoUrl) { setStatus("Video URL is required.", "error"); return; }
 
   destroyAll();
+  hideDiag();
+  videoRetries = 0;
+  audioRetries = 0;
   usingSeparateAudio = !!audioUrl;
   playBtn.disabled = true;
   setStatus("Loading video...", "loading");
   playerWrap.classList.add("visible");
   tips.style.display = "none";
   showBuffering(true);
+
+  // Mixed-content check: an https page can't load an http:// stream — the
+  // browser blocks it silently before hls.js ever gets a chance.
+  if (location.protocol === "https:" && videoUrl.startsWith("http://")) {
+    showDiag(
+      "<strong>Blocked: mixed content.</strong> This page is loaded over " +
+      "<code>https://</code> but the video URL starts with <code>http://</code>. " +
+      "Browsers block insecure (http) media on secure (https) pages, with no error " +
+      "shown in the player itself — it just silently fails. Use an <code>https://</code> " +
+      "version of the stream, or host this page over plain http."
+    );
+    setStatus("Blocked by the browser (mixed content).", "error");
+    playBtn.disabled = false;
+    showBuffering(false);
+    return;
+  }
 
   const canUseHlsJs = typeof Hls !== "undefined" && Hls.isSupported();
   nativeHls = !canUseHlsJs && nativeCanPlayHls();
@@ -488,6 +547,7 @@ function startPlayer() {
 function afterVideoReady(audioUrl) {
   playBtn.disabled = false;
   showBuffering(false);
+  hideDiag();
   if (audioUrl) {
     // If the video also carries its own audio, mute it so the separate
     // track is the only thing heard (avoids double/echoed audio).
@@ -540,21 +600,59 @@ function loadAudio(url) {
 function attachVideoErrorHandling(hlsInstance, label) {
   hlsInstance.on(Hls.Events.ERROR, (_, data) => {
     if (!data.fatal) return;
-    switch (data.type) {
-      case Hls.ErrorTypes.NETWORK_ERROR:
-        setStatus(label + " network hiccup, retrying...", "loading");
-        hlsInstance.startLoad();
-        break;
-      case Hls.ErrorTypes.MEDIA_ERROR:
-        setStatus(label + " media error, recovering...", "loading");
-        hlsInstance.recoverMediaError();
-        break;
-      default:
-        setStatus("Fatal " + label + " error: " + data.details, "error");
+
+    if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+      const count = label === "video" ? ++videoRetries : ++audioRetries;
+
+      if (count > MAX_RETRIES) {
+        setStatus(label + " stream failed to load.", "error");
         hlsInstance.destroy();
         if (label === "video") hlsVideo = null; else hlsAudio = null;
-        break;
+
+        const status = (data.response && data.response.code) || 0;
+        let detail;
+        if (status === 0) {
+          detail =
+            "<strong>Most likely cause: CORS.</strong> The " + label + " server never returned a " +
+            "response the browser is allowed to read — status code <code>0</code>. This is the " +
+            "signature of a CORS rejection or a hotlink/referrer block. " +
+            "<code>hls.js</code> has to fetch the playlist and every segment with JavaScript " +
+            "(<code>XHR</code>/<code>fetch</code>), and each of those requests needs the server to send " +
+            "<code>Access-Control-Allow-Origin</code>. A plain native player, VLC, or a bare " +
+            "<code>&lt;video src&gt;</code> load doesn't need that header, which is why the same URL " +
+            "\"just works\" outside this player." +
+            "<ul>" +
+            "<li>Open DevTools → Network tab, reload, and check the failed <code>.m3u8</code>/<code>.ts</code> " +
+            "requests — a red entry with no response and a CORS message in the Console confirms this.</li>" +
+            "<li>Fix: the origin server needs to send <code>Access-Control-Allow-Origin: *</code> " +
+            "(or your domain) on the manifest <em>and</em> segment responses.</li>" +
+            "<li>Workaround if you don't control the server: route requests through a CORS proxy you trust, " +
+            "or a small server-side relay you run yourself.</li>" +
+            "</ul>";
+        } else {
+          detail =
+            "<strong>" + label + " server returned HTTP " + status + ".</strong> That's not a CORS issue — " +
+            "the request reached the server but was rejected (expired/signed URL, auth required, or the " +
+            "asset no longer exists). Try opening the URL directly in a new tab to confirm it still loads.";
+        }
+        showDiag(detail);
+        return;
+      }
+
+      setStatus(label + " network hiccup, retrying... (" + count + "/" + MAX_RETRIES + ")", "loading");
+      hlsInstance.startLoad();
+      return;
     }
+
+    if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+      setStatus(label + " media error, recovering...", "loading");
+      hlsInstance.recoverMediaError();
+      return;
+    }
+
+    setStatus("Fatal " + label + " error: " + data.details, "error");
+    hlsInstance.destroy();
+    if (label === "video") hlsVideo = null; else hlsAudio = null;
   });
 }
 
@@ -706,6 +804,7 @@ function destroyAll() {
 
 function clearAll() {
   destroyAll();
+  hideDiag();
   playerWrap.classList.remove("visible");
   ctrlBar.style.display = "none";
   tips.style.display = "grid";
