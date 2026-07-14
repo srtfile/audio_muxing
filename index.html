@@ -1,482 +1,805 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8"/>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Advanced AV Sync Player (Relaxed Sync)</title>
+
+<title>AV Sync Player</title>
+
 <style>
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
 :root{
+
   --bg:#0a0a0d;--surface:#111116;--surface2:#18181f;--surface3:#1f1f28;
+
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+
   --text:#ededf2;--muted:#7a7a95;
+
   --accent:#e05c2a;--accent-dim:rgba(224,92,42,0.14);--accent2:#f07040;
+
   --green:#22c55e;--red:#ef4444;--amber:#f59e0b;--radius:8px;
+
 }
+
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px 16px 56px;gap:18px}
+
 header{width:100%;max-width:880px;display:flex;align-items:center;gap:14px}
+
 .logo{width:40px;height:40px;background:linear-gradient(135deg,var(--accent),#c0392b);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(224,92,42,0.35)}
+
 .logo svg{width:22px;height:22px;fill:#fff}
+
 .header-text h1{font-size:17px;font-weight:700;letter-spacing:-0.3px}
+
 .header-text p{font-size:12px;color:var(--muted);margin-top:2px}
 
+
+
+/* tabs */
+
+.mode-tabs{width:100%;max-width:880px;display:flex;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px}
+
+.tab{flex:1;text-align:center;padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:all 0.15s;user-select:none;display:flex;align-items:center;justify-content:center;gap:6px}
+
+.tab:hover{color:var(--text);background:var(--surface2)}
+
+.tab.active{background:var(--accent-dim);color:var(--accent2);border:1px solid rgba(224,92,42,0.3)}
+
+
+
 /* card */
+
 .inputs-card{width:100%;max-width:880px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px}
-.panel{display:flex;flex-direction:column;gap:14px}
+
+.panel{display:none;flex-direction:column;gap:14px}
+
+.panel.active{display:flex}
+
 .input-row{display:flex;flex-direction:column;gap:6px}
+
 .input-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:var(--muted);display:flex;align-items:center;gap:6px}
+
 .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.dot-v{background:var(--accent2)}.dot-a{background:#60a5fa}
+
+.dot-v{background:var(--accent2)}.dot-a{background:#60a5fa}.dot-e{background:#a78bfa}
+
 input[type=text]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;font-family:'Consolas','Courier New',monospace;padding:10px 14px;outline:none;transition:border-color 0.15s}
+
 input[type=text]:focus{border-color:var(--accent)}
+
 input[type=text]::placeholder{color:var(--muted)}
+
 .hint{font-size:11.5px;color:var(--muted);line-height:1.5}
+
 .hint code{background:var(--surface3);padding:1px 5px;border-radius:4px;font-family:'Consolas',monospace;font-size:11px;color:var(--accent2)}
+
 .btn-row{display:flex;gap:10px;margin-top:2px}
+
 button{cursor:pointer;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;padding:10px 20px;transition:opacity 0.15s,transform 0.1s;font-family:inherit}
+
 button:active{transform:scale(0.97)}
+
 .btn-play{background:linear-gradient(135deg,var(--accent),#c0392b);color:#fff;flex:1;box-shadow:0 3px 12px rgba(224,92,42,0.3)}
+
 .btn-play:hover{opacity:0.88}
+
 .btn-play:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none}
+
 .btn-clear{background:var(--surface3);color:var(--muted);border:1px solid var(--border)}
+
 .btn-clear:hover{color:var(--text);border-color:var(--border2)}
 
+
+
 /* status */
+
 .status-bar{width:100%;max-width:880px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);min-height:20px;flex-wrap:wrap}
+
 .status-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background 0.2s}
+
 .status-dot.ok{background:var(--green)}.status-dot.error{background:var(--red)}.status-dot.loading{background:var(--accent);animation:pulse 1s infinite}
+
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
 .badge{display:none;align-items:center;gap:4px;border-radius:20px;padding:2px 8px;font-size:10.5px;font-weight:600}
+
 .badge.on{display:inline-flex}
+
 .badge-sync{background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.3);color:#60a5fa}
+
 .drift-readout{font-size:11px;color:var(--muted);font-family:'Consolas',monospace}
+
 .drift-readout.warn{color:var(--amber)}
 
+
+
 /* player */
+
 .player-wrap{width:100%;max-width:880px;background:#000;border-radius:14px;overflow:hidden;border:1px solid var(--border);display:none;position:relative}
+
 .player-wrap.on{display:block}
-.video-shell{position:relative;background:#000;}
+
+.embed-shell{position:relative;padding-bottom:56.25%;height:0;background:#000;display:none}
+
+.embed-shell.on{display:block}
+
+.embed-shell iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
+
+.video-shell{position:relative;background:#000;display:none}
+
+.video-shell.on{display:block}
+
 video{width:100%;display:block;max-height:540px;background:#000}
+
 .overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);flex-direction:column;gap:10px;z-index:5}
+
 .overlay.on{display:flex}
+
 .overlay-btn{background:linear-gradient(135deg,var(--accent),#c0392b);color:#fff;padding:12px 28px;border-radius:30px;font-size:14px;display:flex;align-items:center;gap:8px;cursor:pointer;border:none;font-family:inherit;font-weight:600;box-shadow:0 4px 16px rgba(224,92,42,0.4)}
+
 .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+
 @keyframes spin{to{transform:rotate(360deg)}}
 
+
+
 /* controls */
+
 .controls-bar{background:var(--surface);border-top:1px solid var(--border);padding:12px 16px;display:none;flex-wrap:wrap;gap:10px;align-items:center}
+
 .controls-bar.on{display:flex}
+
 .ctrl-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
 .ctrl-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted)}
+
 .chip{background:var(--surface3);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:12px;font-weight:500;padding:4px 12px;cursor:pointer;transition:all 0.12s}
+
 .chip:hover{border-color:var(--border2);color:var(--text)}
+
 .chip.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent2);font-weight:600}
+
 .sep{width:1px;height:18px;background:var(--border2);margin:0 2px}
 
+
+
 /* diag */
+
 .diag{width:100%;max-width:880px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:14px 16px;font-size:12.5px;line-height:1.6;color:var(--text);display:none}
+
 .diag.on{display:block}
+
 .diag strong{color:var(--red)}
+
 .diag code{background:var(--surface3);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:11.5px}
+
 .diag ul{margin:6px 0 0 18px}
+
 .diag li{margin-bottom:3px}
+
 .info{width:100%;max-width:880px;background:rgba(224,92,42,0.07);border:1px solid rgba(224,92,42,0.25);border-radius:10px;padding:12px 16px;font-size:12px;line-height:1.6;color:var(--muted);display:none}
+
 .info.on{display:block}
 
+
+
 /* tips */
-.tips{width:100%;max-width:880px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+
+.tips{width:100%;max-width:880px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+
 .tip{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start}
+
 .tip-icon{font-size:18px;line-height:1;flex-shrink:0;margin-top:1px}
+
 .tip-text{font-size:12px;color:var(--muted);line-height:1.5}
+
 .tip-text strong{color:var(--text);display:block;margin-bottom:2px;font-size:12px}
+
 </style>
+
 </head>
+
 <body>
 
+
+
 <header>
+
   <div class="logo"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+
   <div class="header-text">
-    <h1>Advanced AV Sync Player</h1>
-    <p>Mux discrete video and external audio files together with a relaxed error-tolerant layout.</p>
+
+    <h1>AV Sync Player</h1>
+
+    <p>Pick a mode: mux video + audio files, or load an embed/iframe URL</p>
+
   </div>
+
 </header>
 
+
+
+<!-- TABS -->
+
+<div class="mode-tabs">
+
+  <div class="tab active" id="tab-mux" onclick="switchTab('mux')">🎬 Video + Audio mux</div>
+
+  <div class="tab" id="tab-embed" onclick="switchTab('embed')">🔗 Embed / iFrame</div>
+
+</div>
+
+
+
 <div class="inputs-card">
-  <div class="panel">
+
+
+
+  <!-- MUX PANEL -->
+
+  <div class="panel active" id="panel-mux">
+
     <div class="input-row">
-      <label class="input-label" for="videoUrl"><span class="dot dot-v"></span> Video URL (Visual Layer)</label>
+
+      <label class="input-label" for="videoUrl"><span class="dot dot-v"></span> Video URL (picture track)</label>
+
       <input type="text" id="videoUrl" placeholder="https://example.com/video.mp4" spellcheck="false"/>
-      <span class="hint">Direct link to an <code>.mp4</code>, <code>.webm</code>, or <code>.mov</code> stream.</span>
+
+      <span class="hint">Direct <code>.mp4</code> / <code>.webm</code> / <code>.mov</code> file. Should be silent, or its own audio will be muted.</span>
+
     </div>
+
     <div class="input-row">
-      <label class="input-label" for="audioUrl"><span class="dot dot-a"></span> Audio URL (Acoustic Layer)</label>
+
+      <label class="input-label" for="audioUrl"><span class="dot dot-a"></span> Audio URL (sound track)</label>
+
       <input type="text" id="audioUrl" placeholder="https://example.com/audio.mp3" spellcheck="false"/>
-      <span class="hint"><code>.mp3</code>, <code>.m4a</code>, <code>.wav</code>, or <code>.ogg</code> stream — calibrated with relaxed drift rules.</span>
+
+      <span class="hint"><code>.mp3</code> / <code>.aac</code> / <code>.m4a</code> / <code>.wav</code> / <code>.ogg</code> — kept frame-locked to the video with auto drift correction.</span>
+
     </div>
+
   </div>
+
+
+
+  <!-- EMBED PANEL -->
+
+  <div class="panel" id="panel-embed">
+
+    <div class="input-row">
+
+      <label class="input-label" for="embedUrl"><span class="dot dot-e"></span> Embed / iFrame URL</label>
+
+      <input type="text" id="embedUrl" placeholder="https://www.youtube.com/embed/dQw4w9WgXcQ" spellcheck="false"/>
+
+      <span class="hint">YouTube / Vimeo watch links are auto-converted. Any other iframe-embeddable URL works too.</span>
+
+    </div>
+
+  </div>
+
+
 
   <div class="btn-row">
-    <button class="btn-play" id="playBtn" onclick="startPlayer()">▶ Load &amp; Sync Play</button>
+
+    <button class="btn-play" id="playBtn" onclick="startPlayer()">▶ Load &amp; Play</button>
+
     <button class="btn-clear" onclick="clearAll()">Clear</button>
+
   </div>
+
 </div>
 
+
+
 <div class="status-bar">
+
   <div class="status-dot" id="statusDot"></div>
-  <span id="statusText">Provide valid target asset URLs, then execute the Sync Player.</span>
-  <span class="badge badge-sync" id="syncBadge">🔊 DUAL-TRACK MUXED</span>
+
+  <span id="statusText">Choose a mode above, fill in the URL(s), then press Load &amp; Play.</span>
+
+  <span class="badge badge-sync" id="syncBadge">🔊 audio muxed</span>
+
   <span class="drift-readout" id="driftEl"></span>
+
 </div>
+
+
 
 <div class="info" id="infoBanner"></div>
 
+
+
 <div class="player-wrap" id="playerWrap">
+
+  <!-- mux -->
+
   <div class="video-shell" id="videoShell">
+
     <video id="video" controls playsinline></video>
+
     <audio id="audio" preload="auto" style="display:none"></audio>
-    
+
     <div class="overlay" id="playOverlay">
-      <button class="overlay-btn" onclick="manualPlay()">▶ Initialize Playback</button>
+
+      <button class="overlay-btn" onclick="manualPlay()">▶ Click to play</button>
+
     </div>
-    
+
     <div class="overlay" id="bufferOverlay">
+
       <div class="spinner"></div>
+
     </div>
+
   </div>
 
+  <!-- embed -->
+
+  <div class="embed-shell" id="embedShell"></div>
+
+
+
   <div class="controls-bar" id="controlsBar">
-    <div class="ctrl-group" id="volGroup">
-      <span class="ctrl-label">Mux Volume</span>
-      <input type="range" id="audioVol" min="0" max="1" step="0.05" value="1" oninput="setAudioVolume(this.value)" style="width:90px"/>
+
+    <div class="ctrl-group" id="volGroup" style="display:none">
+
+      <span class="ctrl-label">Audio vol</span>
+
+      <input type="range" id="audioVol" min="0" max="1" step="0.05" value="1" oninput="audio.volume=+this.value" style="width:80px"/>
+
     </div>
-    <div class="sep" id="volSep"></div>
-    
+
+    <div class="sep" id="volSep" style="display:none"></div>
+
     <div class="ctrl-group">
-      <span class="ctrl-label">Engine Speed</span>
+
+      <span class="ctrl-label">Speed</span>
+
       <span class="chip" onclick="setSpeed(0.5,this)">0.5×</span>
+
       <span class="chip" onclick="setSpeed(0.75,this)">0.75×</span>
-      <span class="chip active" onclick="setSpeed(1,this)">1.0×</span>
+
+      <span class="chip active" onclick="setSpeed(1,this)">1×</span>
+
       <span class="chip" onclick="setSpeed(1.25,this)">1.25×</span>
+
       <span class="chip" onclick="setSpeed(1.5,this)">1.5×</span>
-      <span class="chip" onclick="setSpeed(2,this)">2.0×</span>
+
+      <span class="chip" onclick="setSpeed(2,this)">2×</span>
+
     </div>
+
     <div class="sep"></div>
-    
+
     <div class="ctrl-group">
-      <span class="ctrl-label">Timeline Loop</span>
+
+      <span class="ctrl-label">Loop</span>
+
       <span class="chip" id="chipLoop" onclick="toggleLoop(this)">Off</span>
+
     </div>
-    <div class="sep" id="resyncSep"></div>
-    
-    <div class="ctrl-group" id="resyncGroup">
-      <span class="chip" onclick="forceResync()">⟲ Force Re-Align</span>
+
+    <div class="sep" id="resyncSep" style="display:none"></div>
+
+    <div class="ctrl-group" id="resyncGroup" style="display:none">
+
+      <span class="chip" onclick="forceResync()">⟲ Resync audio</span>
+
     </div>
+
     <div class="sep"></div>
-    
+
     <div class="ctrl-group">
-      <span class="ctrl-label">Window</span>
-      <span class="chip" onclick="togglePip()">Picture-in-Picture</span>
+
+      <span class="ctrl-label">PiP</span>
+
+      <span class="chip" onclick="togglePip()">Enter PiP</span>
+
     </div>
+
   </div>
+
 </div>
+
+
 
 <div class="diag" id="diagBox"></div>
 
+
+
 <div class="tips" id="tips">
-  <div class="tip">
-    <div class="tip-icon">🩹</div>
-    <div class="tip-text"><strong>Relaxed Sync Tuning</strong>The drift threshold is expanded to $0.85\text{ s}$ to stop choppy sound cycles, rendering audio drops much cleaner.</div>
-  </div>
-  <div class="tip">
-    <div class="tip-icon">🛡️</div>
-    <div class="tip-text"><strong>Interlocked Brake System</strong>If either element pauses or hits a severe stall, the player safely pauses both nodes instantly until recovered.</div>
-  </div>
+
+  <div class="tip"><div class="tip-icon">🎬</div><div class="tip-text"><strong>Mux mode</strong>Paste a silent video URL and its matching audio URL — the player locks them together and auto-fixes drift every 400ms.</div></div>
+
+  <div class="tip"><div class="tip-icon">🔗</div><div class="tip-text"><strong>Embed mode</strong>Switch to the Embed tab and paste a YouTube, Vimeo, or any iframe URL — it loads inside a sandboxed iframe.</div></div>
+
+  <div class="tip"><div class="tip-icon">⌨️</div><div class="tip-text"><strong>Keyboard (mux mode)</strong>Space = play/pause · ←/→ seek · ↑/↓ volume · M mute · F fullscreen.</div></div>
+
 </div>
 
+
+
 <script>
-const video = document.getElementById("video");
-const audio = document.getElementById("audio");
-const playerWrap = document.getElementById("playerWrap");
-const ctrlBar = document.getElementById("controlsBar");
-const tips = document.getElementById("tips");
-const playOverlay = document.getElementById("playOverlay");
-const bufferOver = document.getElementById("bufferOverlay");
-const statusDot = document.getElementById("statusDot");
-const statusTxt = document.getElementById("statusText");
-const diagBox = document.getElementById("diagBox");
-const syncBadge = document.getElementById("syncBadge");
-const driftEl = document.getElementById("driftEl");
-const playBtn = document.getElementById("playBtn");
-const infoBanner = document.getElementById("infoBanner");
 
-let hasAudioMux = false;
-let driftInterval = null;
-let isStalled = false;
+const video=document.getElementById("video"),audio=document.getElementById("audio");
 
-// Expanded window limits hard sync adjustments to let problematic audio recover
-const DRIFT_THRESHOLD = 0.85; 
+const playerWrap=document.getElementById("playerWrap"),ctrlBar=document.getElementById("controlsBar");
 
-function setStatus(msg, state) {
-  statusTxt.textContent = msg;
-  statusDot.className = "status-dot" + (state ? " " + state : "");
+const tips=document.getElementById("tips"),playOverlay=document.getElementById("playOverlay");
+
+const bufferOver=document.getElementById("bufferOverlay"),statusDot=document.getElementById("statusDot");
+
+const statusTxt=document.getElementById("statusText"),diagBox=document.getElementById("diagBox");
+
+const syncBadge=document.getElementById("syncBadge"),driftEl=document.getElementById("driftEl");
+
+const videoShell=document.getElementById("videoShell"),embedShell=document.getElementById("embedShell");
+
+const playBtn=document.getElementById("playBtn"),infoBanner=document.getElementById("infoBanner");
+
+
+
+let mode="mux",hasMux=false,driftInterval=null;
+
+const DRIFT=0.12;
+
+
+
+function switchTab(m){
+
+  mode=m;
+
+  document.getElementById("tab-mux").classList.toggle("active",m==="mux");
+
+  document.getElementById("tab-embed").classList.toggle("active",m==="embed");
+
+  document.getElementById("panel-mux").classList.toggle("active",m==="mux");
+
+  document.getElementById("panel-embed").classList.toggle("active",m==="embed");
+
+  clearAll();
+
 }
 
-function showDiag(h) { diagBox.innerHTML = h; diagBox.classList.add("on"); }
-function hideDiag() { diagBox.classList.remove("on"); diagBox.innerHTML = ""; }
-function showInfo(h) { infoBanner.innerHTML = h; infoBanner.classList.add("on"); }
-function hideInfo() { infoBanner.classList.remove("on"); }
 
-function showBuf(on) { 
-  bufferOver.classList.toggle("on", on);
-  isStalled = on;
+
+function setStatus(msg,state){statusTxt.textContent=msg;statusDot.className="status-dot"+(state?" "+state:"")}
+
+function showDiag(h){diagBox.innerHTML=h;diagBox.classList.add("on")}
+
+function hideDiag(){diagBox.classList.remove("on");diagBox.innerHTML=""}
+
+function showInfo(h){infoBanner.innerHTML=h;infoBanner.classList.add("on")}
+
+function hideInfo(){infoBanner.classList.remove("on")}
+
+function showBuf(on){bufferOver.classList.toggle("on",on)}
+
+
+
+function normalizeEmbed(raw){
+
+  let m=raw.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+
+  if(m) return"https://www.youtube.com/embed/"+m[1]+"?autoplay=1";
+
+  m=raw.match(/vimeo\.com\/(\d+)/);
+
+  if(m) return"https://player.vimeo.com/video/"+m[1]+"?autoplay=1";
+
+  return raw;
+
 }
 
-function loadAsset(el, url) {
-  return new Promise((resolve, reject) => {
-    const onMeta = () => {
-      el.removeEventListener("error", onError);
-      resolve();
-    };
-    const onError = () => {
-      el.removeEventListener("loadedmetadata", onMeta);
-      reject();
-    };
-    el.addEventListener("loadedmetadata", onMeta, { once: true });
-    el.addEventListener("error", onError, { once: true });
-    el.src = url;
-    el.load();
+
+
+function loadEl(el,url){
+
+  return new Promise((res,rej)=>{
+
+    const onE=()=>{el.removeEventListener("loadedmetadata",onM);rej()};
+
+    const onM=()=>{el.removeEventListener("error",onE);res()};
+
+    el.addEventListener("loadedmetadata",onM,{once:true});
+
+    el.addEventListener("error",onE,{once:true});
+
+    el.src=url;el.load();
+
   });
+
 }
 
-async function startPlayer() {
-  hideDiag(); 
-  hideInfo();
-  playBtn.disabled = true;
 
-  const vUrl = document.getElementById("videoUrl").value.trim();
-  const aUrl = document.getElementById("audioUrl").value.trim();
 
-  if (!vUrl) {
-    setStatus("Error: Video track source URL required.", "error");
-    playBtn.disabled = false;
+async function startPlayer(){
+
+  hideDiag();hideInfo();
+
+  playBtn.disabled=true;
+
+
+
+  if(mode==="embed"){
+
+    const url=document.getElementById("embedUrl").value.trim();
+
+    if(!url){setStatus("Paste an embed URL first.","error");playBtn.disabled=false;return}
+
+    doEmbed(url);
+
+    playBtn.disabled=false;
+
     return;
+
   }
 
-  if (window.location.protocol === "https:" && (vUrl.startsWith("http://") || (aUrl && aUrl.startsWith("http://")))) {
-    showDiag("<strong>Security Blocked:</strong> HTTPS configurations restrict mixed HTTP content requests.");
-    setStatus("Mixed content blocked.", "error");
-    playBtn.disabled = false;
-    return;
+
+
+  // mux mode
+
+  const vUrl=document.getElementById("videoUrl").value.trim();
+
+  const aUrl=document.getElementById("audioUrl").value.trim();
+
+  if(!vUrl){setStatus("Video URL is required.","error");playBtn.disabled=false;return}
+
+  if(location.protocol==="https:"&&(vUrl.startsWith("http://")||(aUrl&&aUrl.startsWith("http://")))){
+
+    showDiag("<strong>Blocked: mixed content.</strong> Use <code>https://</code> URLs.");
+
+    setStatus("Blocked (mixed content).","error");playBtn.disabled=false;return;
+
   }
 
-  destroyEngine(true);
+  destroyAll(true);
+
   playerWrap.classList.add("on");
-  tips.style.display = "none";
-  setStatus("Muxing core assets...", "loading");
-  showBuf(true);
 
-  hasAudioMux = !!aUrl;
-  
-  try {
-    const queue = [loadAsset(video, vUrl)];
-    if (hasAudioMux) {
-      queue.push(loadAsset(audio, aUrl));
-    }
+  videoShell.classList.add("on");
 
-    await Promise.all(queue);
+  embedShell.classList.remove("on");
 
-    video.muted = hasAudioMux; 
-    if (hasAudioMux) {
+  tips.style.display="none";
+
+  setStatus("Loading…","loading");showBuf(true);
+
+  await doMux(vUrl,aUrl);
+
+  playBtn.disabled=false;
+
+}
+
+
+
+async function doMux(vUrl,aUrl){
+
+  hasMux=!!aUrl;
+
+  try{
+
+    const loads=[loadEl(video,vUrl)];
+
+    if(hasMux) loads.push(loadEl(audio,aUrl));
+
+    await Promise.all(loads);
+
+    video.muted=hasMux;
+
+    if(hasMux){
+
       syncBadge.classList.add("on");
-      document.getElementById("volGroup").style.display = "flex";
-      document.getElementById("volSep").style.display = "block";
-      document.getElementById("resyncGroup").style.display = "flex";
-      document.getElementById("resyncSep").style.display = "block";
-      setStatus("Engine Active — Relaxed track alignment active.", "ok");
-      bindMuxSync();
+
+      document.getElementById("volGroup").style.display="flex";
+
+      document.getElementById("volSep").style.display="block";
+
+      document.getElementById("resyncGroup").style.display="flex";
+
+      document.getElementById("resyncSep").style.display="block";
+
+      setStatus("Ready — video + audio muxed.","ok");
+
+      attachSync();
+
     } else {
-      syncBadge.classList.remove("on");
-      document.getElementById("volGroup").style.display = "none";
-      document.getElementById("volSep").style.display = "none";
-      document.getElementById("resyncGroup").style.display = "none";
-      document.getElementById("resyncSep").style.display = "none";
-      setStatus("Engine Active — Video track online.", "ok");
+
+      setStatus("Ready — "+(vUrl.split("/").pop()||"video")+".","ok");
+
     }
 
     showBuf(false);
-    ctrlBar.classList.add("on"); 
-    bindMuxBrakes();
-    attemptPlayback();
-  } catch (err) {
+
+    ctrlBar.classList.add("on");
+
+    attachVideoEvents();
+
+    attemptPlay();
+
+  } catch{
+
     showBuf(false);
-    setStatus("Asset extraction failure.", "error");
-    showDiag("<strong>Media pipeline could not clear:</strong> Verify formatting parameters, cross-origin rules (CORS), or link uptime.");
-  } finally {
-    playBtn.disabled = false;
+
+    setStatus("Failed to load. Check the URLs.","error");
+
+    showDiag("<strong>Media could not be loaded.</strong> Common causes:<ul><li>Server blocks cross-origin (CORS) requests.</li><li>URL needs auth or file is offline.</li><li>Format not supported by your browser.</li><li>Mixed content: <code>http://</code> on an <code>https://</code> page.</li></ul>");
+
   }
+
 }
 
-/* Interlocked Safety Braking */
-function bindMuxBrakes() {
-  const triggerStall = () => {
-    if (!video.paused || (hasAudioMux && !audio.paused)) {
-      showBuf(true);
-      video.pause();
-      if (hasAudioMux) audio.pause();
-    }
-  };
 
-  const clearStall = () => {
-    showBuf(false);
-    if (!playOverlay.classList.contains("on") && video.paused) {
-      attemptPlayback();
-    }
-  };
 
-  video.addEventListener("waiting", triggerStall, { passive: true });
-  video.addEventListener("stalled", triggerStall, { passive: true });
-  video.addEventListener("playing", () => showBuf(false), { passive: true });
-  video.addEventListener("canplay", clearStall, { passive: true });
+function doEmbed(raw){
 
-  if (hasAudioMux) {
-    audio.addEventListener("waiting", triggerStall, { passive: true });
-    audio.addEventListener("stalled", triggerStall, { passive: true });
-    audio.addEventListener("playing", () => showBuf(false), { passive: true });
-    audio.addEventListener("canplay", clearStall, { passive: true });
-  }
+  destroyAll(true);
+
+  playerWrap.classList.add("on");
+
+  videoShell.classList.remove("on");
+
+  embedShell.classList.add("on");
+
+  tips.style.display="none";
+
+  ctrlBar.classList.remove("on");
+
+  const src=normalizeEmbed(raw);
+
+  const iframe=document.createElement("iframe");
+
+  iframe.src=src;iframe.allowFullscreen=true;
+
+  iframe.allow="autoplay; fullscreen; picture-in-picture; encrypted-media";
+
+  embedShell.innerHTML="";embedShell.appendChild(iframe);
+
+  setStatus("Embed loaded — "+src.split("/")[2],"ok");
+
 }
 
-/* Loose Phase Alignment Mechanics */
-function bindMuxSync() {
-  video.addEventListener("play", () => {
-    if (isStalled) return;
-    audio.currentTime = video.currentTime;
-    audio.play().catch(() => {});
-  });
 
-  video.addEventListener("pause", () => {
-    audio.pause();
-  });
 
-  video.addEventListener("seeking", () => {
-    audio.currentTime = video.currentTime;
-  });
+function attachVideoEvents(){
 
-  video.addEventListener("ratechange", () => {
-    audio.playbackRate = video.playbackRate;
-  });
+  video.addEventListener("waiting",()=>showBuf(true),{passive:true});
 
-  audio.addEventListener("pause", () => {
-    if (!video.paused && !isStalled) {
-      video.pause();
-    }
-  });
+  video.addEventListener("playing",()=>showBuf(false),{passive:true});
 
-  audio.addEventListener("play", () => {
-    if (video.paused && !isStalled && !playOverlay.classList.contains("on")) {
-      video.play().catch(() => {});
-    }
-  });
+  video.addEventListener("stalled",()=>showBuf(true),{passive:true});
 
-  if (driftInterval) clearInterval(driftInterval);
-  
-  // Relaxed execution checks (600ms resolution windows)
-  driftInterval = setInterval(() => {
-    if (video.paused || audio.paused || isStalled) return;
-    
-    const operationalDrift = video.currentTime - audio.currentTime;
-    driftEl.textContent = "drift " + (operationalDrift >= 0 ? "+" : "") + operationalDrift.toFixed(3) + "s";
-    
-    const driftViolation = Math.abs(operationalDrift) > DRIFT_THRESHOLD;
-    driftEl.classList.toggle("warn", driftViolation);
-    
-    if (driftViolation) {
-      // Soft tracking re-alignment hook
-      audio.currentTime = video.currentTime;
-    }
-  }, 600);
+  video.addEventListener("canplay",()=>showBuf(false),{passive:true});
+
 }
 
-function setAudioVolume(val) {
-  if (hasAudioMux) audio.volume = +val;
-  else video.volume = +val;
+
+
+function attachSync(){
+
+  video.addEventListener("play",()=>{audio.currentTime=video.currentTime;audio.play().catch(()=>{})});
+
+  video.addEventListener("pause",()=>audio.pause());
+
+  video.addEventListener("seeking",()=>{audio.currentTime=video.currentTime});
+
+  video.addEventListener("ratechange",()=>{audio.playbackRate=video.playbackRate});
+
+  if(driftInterval) clearInterval(driftInterval);
+
+  driftInterval=setInterval(()=>{
+
+    if(video.paused||audio.paused) return;
+
+    const d=video.currentTime-audio.currentTime;
+
+    driftEl.textContent="drift "+(d>=0?"+":"")+d.toFixed(2)+"s";
+
+    driftEl.classList.toggle("warn",Math.abs(d)>DRIFT);
+
+    if(Math.abs(d)>DRIFT) audio.currentTime=video.currentTime;
+
+  },400);
+
 }
 
-function forceResync() {
-  if (!hasAudioMux) return;
-  audio.currentTime = video.currentTime;
-  if (!video.paused) {
-    audio.play().catch(() => {});
-  }
-  showInfo("🔁 Active Manual track alignment run complete.");
+
+
+function forceResync(){if(!hasMux)return;audio.currentTime=video.currentTime;if(!video.paused)audio.play().catch(()=>{});showInfo("🔁 Audio resynced.")}
+
+function attemptPlay(){const p=video.play();if(p&&p.catch){p.then(()=>playOverlay.classList.remove("on")).catch(()=>playOverlay.classList.add("on"))}}
+
+function manualPlay(){playOverlay.classList.remove("on");video.play().catch(()=>{});if(hasMux)audio.play().catch(()=>{})}
+
+function setSpeed(r,chip){video.playbackRate=r;if(hasMux)audio.playbackRate=r;chip.parentElement.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));chip.classList.add("active")}
+
+function toggleLoop(chip){video.loop=!video.loop;if(hasMux)audio.loop=video.loop;chip.textContent=video.loop?"On":"Off";chip.classList.toggle("active",video.loop)}
+
+async function togglePip(){try{document.pictureInPictureElement?await document.exitPictureInPicture():await video.requestPictureInPicture()}catch{showInfo("PiP not supported in this browser.")}}
+
+
+
+function destroyAll(keep){
+
+  if(driftInterval){clearInterval(driftInterval);driftInterval=null}
+
+  video.pause();audio.pause();
+
+  while(video.firstChild)video.removeChild(video.firstChild);
+
+  video.removeAttribute("src");video.load();
+
+  audio.removeAttribute("src");audio.load();
+
+  embedShell.innerHTML="";
+
+  playOverlay.classList.remove("on");bufferOver.classList.remove("on");
+
+  syncBadge.classList.remove("on");driftEl.textContent="";
+
+  document.getElementById("volGroup").style.display="none";
+
+  document.getElementById("volSep").style.display="none";
+
+  document.getElementById("resyncGroup").style.display="none";
+
+  document.getElementById("resyncSep").style.display="none";
+
+  hasMux=false;
+
+  if(!keep){playerWrap.classList.remove("on");ctrlBar.classList.remove("on")}
+
 }
 
-function attemptPlayback() {
-  const playbackPromise = video.play();
-  if (playbackPromise && playbackPromise.catch) {
-    playbackPromise.then(() => {
-      playOverlay.classList.remove("on");
-      if (hasAudioMux) audio.play().catch(() => {});
-    }).catch(() => {
-      playOverlay.classList.add("on");
-      if (hasAudioMux) audio.pause();
-    });
-  }
+
+
+function clearAll(){
+
+  destroyAll(false);hideDiag();hideInfo();
+
+  tips.style.display="grid";
+
+  ["videoUrl","audioUrl","embedUrl"].forEach(id=>{const e=document.getElementById(id);if(e)e.value=""});
+
+  setStatus("Choose a mode above, fill in the URL(s), then press Load & Play.");
+
 }
 
-function manualPlay() {
-  playOverlay.classList.remove("on");
-  video.play().catch(() => {});
-  if (hasAudioMux) audio.play().catch(() => {});
-}
 
-function setSpeed(rate, chipElement) {
-  video.playbackRate = rate;
-  if (hasAudioMux) audio.playbackRate = rate;
-  chipElement.parentElement.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-  chipElement.classList.add("active");
-}
 
-function toggleLoop(chipElement) {
-  video.loop = !video.loop;
-  if (hasAudioMux) audio.loop = video.loop;
-  chipElement.textContent = video.loop ? "On" : "Off";
-  chipElement.classList.toggle("active", video.loop);
-}
+document.addEventListener("keydown",e=>{
 
-async function togglePip() {
-  try {
-    if (document.pictureInPictureElement) {
-      await document.exitPictureInPicture();
-    } else {
-      await video.requestPictureInPicture();
-    }
-  } catch {
-    showInfo("System alert: PiP framework unavailable on current system setup.");
-  }
-}
+  if(e.target.tagName==="INPUT"){if(e.key==="Enter"){e.preventDefault();startPlayer()}return}
 
-function destroyEngine(keepActiveWrapper) {
-  if (driftInterval) {
-    clearInterval(driftInterval);
-    driftInterval = null;
-  }
-  video.pause();
-  audio.pause();
-  
-  video.removeAttribute("src");
-  video.load();
-  audio.removeAttribute("src");
-  audio.load();
-  
-  playOverlay.classList.remove("on");
-  bufferOver.classList.remove("on");
-  syncBadge.classList.remove("on");
-  driftEl.textContent = "";
-  
-  hasAudioMux = false;
-  isStalled = false;
-  
-  if (!keepActiveWrapper) {
-    playerWrap.classList.remove("on");
-    ctrlBar.classList.
+  if(!playerWrap.classList.contains("on")||!videoShell.classList.contains("on")) return;
+
+  if(e.key===" "){e.preventDefault();if(video.paused){video.play();if(hasMux)audio.play().catch(()=>{})}else{video.pause();if(hasMux)audio.pause()}}
+
+  if(e.key==="ArrowLeft"){e.preventDefault();video.currentTime=Math.max(0,video.currentTime-5);if(hasMux)audio.currentTime=video.currentTime}
+
+  if(e.key==="ArrowRight"){e.preventDefault();video.currentTime+=5;if(hasMux)audio.currentTime=video.currentTime}
+
+  if(e.key==="ArrowUp"){e.preventDefault();if(hasMux)audio.volume=Math.min(1,audio.volume+0.1);else video.volume=Math.min(1,video.volume+0.1)}
+
+  if(e.key==="ArrowDown"){e.preventDefault();if(hasMux)audio.volume=Math.max(0,audio.volume-0.1);else video.volume=Math.max(0,video.volume-0.1)}
+
+  if(e.key==="m"||e.key==="M"){if(hasMux)audio.muted=!audio.muted;else video.muted=!video.muted}
+
+  if(e.key==="f"||e.key==="F"){video.requestFullscreen&&video.requestFullscreen()}
+
+});
+
+</script>
+
+</body>
+
+</html>
