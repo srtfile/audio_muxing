@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>HLS Mux Player</title>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -21,6 +21,7 @@
     --accent-dim: rgba(139,92,246,0.15);
     --green: #22c55e;
     --red: #ef4444;
+    --amber: #f59e0b;
     --radius: 8px;
   }
 
@@ -108,6 +109,8 @@
   input[type="text"]:focus { border-color: var(--accent); }
   input[type="text"]::placeholder { color: var(--muted); }
 
+  .hint { font-size: 11px; color: var(--muted); }
+
   .btn-row {
     display: flex;
     gap: 10px;
@@ -122,6 +125,7 @@
     font-weight: 600;
     padding: 10px 20px;
     transition: opacity 0.15s, transform 0.1s;
+    font-family: inherit;
   }
   button:active { transform: scale(0.97); }
 
@@ -131,6 +135,7 @@
     flex: 1;
   }
   .btn-play:hover { opacity: 0.88; }
+  .btn-play:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-clear {
     background: var(--surface3);
@@ -148,8 +153,14 @@
     overflow: hidden;
     border: 1px solid var(--border);
     display: none;
+    position: relative;
   }
   .player-wrap.visible { display: block; }
+
+  .video-shell {
+    position: relative;
+    background: #000;
+  }
 
   video {
     width: 100%;
@@ -157,6 +168,38 @@
     max-height: 540px;
     background: #000;
   }
+
+  /* overlay for autoplay-blocked / buffering states */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.45);
+    flex-direction: column;
+    gap: 10px;
+    z-index: 5;
+  }
+  .overlay.visible { display: flex; }
+  .overlay-btn {
+    background: var(--accent);
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .spinner {
+    width: 34px; height: 34px;
+    border: 3px solid rgba(255,255,255,0.25);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   /* ── Controls bar ── */
   .controls-bar {
@@ -173,6 +216,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    flex-wrap: wrap;
   }
 
   .ctrl-label {
@@ -214,6 +258,7 @@
     font-size: 12px;
     color: var(--muted);
     min-height: 20px;
+    flex-wrap: wrap;
   }
   .status-dot {
     width: 6px; height: 6px;
@@ -236,7 +281,7 @@
   }
   .sync-badge.visible { display: block; }
   .sync-badge .drift { color: var(--green); font-weight: 600; }
-  .sync-badge .drift.warn { color: #f59e0b; }
+  .sync-badge .drift.warn { color: var(--amber); }
 
   /* ── Tips ── */
   .tips {
@@ -275,37 +320,47 @@
   </div>
   <div>
     <h1>HLS Mux Player</h1>
-    <p>Merge a soundless video stream with a separate audio track</p>
+    <p>Plays any .m3u8 stream — single combined stream, or a soundless video muxed live with a separate audio track</p>
   </div>
 </header>
 
 <div class="inputs-card">
   <div class="input-row">
     <label class="input-label" for="videoUrl">
-      <span class="dot dot-video"></span> Video stream URL (.m3u8)
+      <span class="dot dot-video"></span> Video stream URL (.m3u8) — required
     </label>
-    <input type="text" id="videoUrl" placeholder="https://cdn.example.com/.../video/1080/playlist.m3u8" spellcheck="false"/>
+    <input type="text" id="videoUrl" placeholder="https://cdn.example.com/.../video/1080/playlist.m3u8 (or a full master playlist with audio already inside)" spellcheck="false"/>
+    <span class="hint">Can be a plain video-only stream, or a normal master playlist that already has audio — both work.</span>
   </div>
   <div class="input-row">
     <label class="input-label" for="audioUrl">
       <span class="dot dot-audio"></span> Audio stream URL (.m3u8) — optional
     </label>
     <input type="text" id="audioUrl" placeholder="https://cdn.example.com/.../audio/1_en/playlist.m3u8" spellcheck="false"/>
+    <span class="hint">Only needed if the video stream has no audio of its own. When set, the video's own audio (if any) is muted automatically so you don't get double sound.</span>
   </div>
   <div class="btn-row">
-    <button class="btn-play" onclick="startPlayer()">Load &amp; Play</button>
+    <button class="btn-play" id="playBtn" onclick="startPlayer()">Load &amp; Play</button>
     <button class="btn-clear" onclick="clearAll()">Clear</button>
   </div>
 </div>
 
 <div class="status-bar">
   <div class="status-dot" id="statusDot"></div>
-  <span id="statusText">Paste your stream URLs above and press Load &amp; Play.</span>
+  <span id="statusText">Paste your stream URL(s) above and press Load &amp; Play.</span>
   <span class="sync-badge" id="syncBadge">Drift: <span class="drift" id="driftVal">0.00s</span></span>
 </div>
 
 <div class="player-wrap" id="playerWrap">
-  <video id="video" controls></video>
+  <div class="video-shell">
+    <video id="video" controls playsinline></video>
+    <div class="overlay" id="playOverlay">
+      <div class="overlay-btn" onclick="manualPlay()">▶ Click to play</div>
+    </div>
+    <div class="overlay" id="bufferOverlay">
+      <div class="spinner"></div>
+    </div>
+  </div>
   <div class="controls-bar" id="controlsBar" style="display:none;">
     <div class="ctrl-group">
       <span class="ctrl-label">Audio</span>
@@ -317,6 +372,11 @@
       <span class="chip active" id="chipVolSync" onclick="toggleVolSync(this)">On</span>
     </div>
     <div class="separator"></div>
+    <div class="ctrl-group" id="qualityGroup" style="display:none;">
+      <span class="ctrl-label">Quality</span>
+      <span id="qualityChips"></span>
+    </div>
+    <div class="separator" id="qualitySep" style="display:none;"></div>
     <div class="ctrl-group">
       <span class="ctrl-label">Resync</span>
       <button class="chip" onclick="forceResync()">Force now</button>
@@ -327,42 +387,55 @@
 <div class="tips" id="tips">
   <div class="tip">
     <div class="tip-icon">🎬</div>
-    <div class="tip-text"><strong>Soundless video URL</strong>Paste the quality playlist, e.g. .../video/1080/playlist.m3u8</div>
+    <div class="tip-text"><strong>Any m3u8 works</strong>Paste a normal HLS stream and it plays like any player — audio included.</div>
   </div>
   <div class="tip">
     <div class="tip-icon">🔊</div>
-    <div class="tip-text"><strong>Separate audio URL</strong>Paste the language track, e.g. .../audio/1_en/playlist.m3u8</div>
+    <div class="tip-text"><strong>Separate audio URL</strong>Only fill this in if your video stream is silent on its own.</div>
   </div>
   <div class="tip">
     <div class="tip-icon">⚡</div>
-    <div class="tip-text"><strong>Auto-sync</strong>Audio stays locked to video. Use "Force now" if you notice drift.</div>
+    <div class="tip-text"><strong>Auto-sync</strong>Audio stays locked to video with smooth micro-adjustments, hard resync on big drift.</div>
   </div>
   <div class="tip">
     <div class="tip-icon">🌐</div>
-    <div class="tip-text"><strong>CORS notice</strong>Stream servers must allow browser requests. CDN streams usually do.</div>
+    <div class="tip-text"><strong>CORS notice</strong>Stream servers must allow browser (CORS) requests, or playback will fail.</div>
   </div>
 </div>
 
 <script>
-const video     = document.getElementById("video");
-const statusDot = document.getElementById("statusDot");
-const statusTxt = document.getElementById("statusText");
-const syncBadge = document.getElementById("syncBadge");
-const driftVal  = document.getElementById("driftVal");
-const playerWrap= document.getElementById("playerWrap");
-const ctrlBar   = document.getElementById("controlsBar");
-const tips      = document.getElementById("tips");
+const video        = document.getElementById("video");
+const statusDot    = document.getElementById("statusDot");
+const statusTxt    = document.getElementById("statusText");
+const syncBadge    = document.getElementById("syncBadge");
+const driftVal     = document.getElementById("driftVal");
+const playerWrap   = document.getElementById("playerWrap");
+const ctrlBar      = document.getElementById("controlsBar");
+const tips         = document.getElementById("tips");
+const playOverlay  = document.getElementById("playOverlay");
+const bufferOverlay= document.getElementById("bufferOverlay");
+const playBtn      = document.getElementById("playBtn");
+const qualityGroup = document.getElementById("qualityGroup");
+const qualitySep   = document.getElementById("qualitySep");
+const qualityChips = document.getElementById("qualityChips");
 
-let hlsVideo  = null;
-let hlsAudio  = null;
-let audioEl   = null;
-let syncTimer = null;
-let volSyncOn = true;
-let audioOn   = true;
+let hlsVideo   = null;
+let hlsAudio   = null;
+let audioEl    = null;
+let syncTimer  = null;
+let volSyncOn  = true;
+let audioOn    = true;
+let usingSeparateAudio = false;
+let nativeHls  = false; // Safari native playback path
 
 function setStatus(msg, state) {
   statusTxt.textContent = msg;
   statusDot.className   = "status-dot" + (state ? " " + state : "");
+}
+
+function nativeCanPlayHls() {
+  const test = document.createElement("video");
+  return test.canPlayType("application/vnd.apple.mpegurl") !== "";
 }
 
 function startPlayer() {
@@ -372,84 +445,218 @@ function startPlayer() {
   if (!videoUrl) { setStatus("Video URL is required.", "error"); return; }
 
   destroyAll();
+  usingSeparateAudio = !!audioUrl;
+  playBtn.disabled = true;
   setStatus("Loading video...", "loading");
   playerWrap.classList.add("visible");
   tips.style.display = "none";
+  showBuffering(true);
 
-  if (!Hls.isSupported()) {
-    setStatus("HLS not supported in this browser.", "error");
+  const canUseHlsJs = typeof Hls !== "undefined" && Hls.isSupported();
+  nativeHls = !canUseHlsJs && nativeCanPlayHls();
+
+  if (!canUseHlsJs && !nativeHls) {
+    setStatus("This browser can't play HLS (.m3u8) streams.", "error");
+    playBtn.disabled = false;
+    showBuffering(false);
     return;
   }
 
-  hlsVideo = new Hls({ enableWorker: true, lowLatencyMode: false });
-  hlsVideo.loadSource(videoUrl);
-  hlsVideo.attachMedia(video);
+  if (canUseHlsJs) {
+    hlsVideo = new Hls({
+      enableWorker: true,
+      lowLatencyMode: false,
+      maxBufferLength: 30,
+      backBufferLength: 60
+    });
+    attachVideoErrorHandling(hlsVideo, "video");
+    hlsVideo.loadSource(videoUrl);
+    hlsVideo.attachMedia(video);
 
-  hlsVideo.on(Hls.Events.MANIFEST_PARSED, () => {
-    if (audioUrl) {
-      loadAudio(audioUrl);
-    } else {
-      setStatus("Video loaded — no audio URL provided, playing video only.", "ok");
-      ctrlBar.style.display = "none";
-    }
-    video.play().catch(() => {});
-  });
+    hlsVideo.on(Hls.Events.MANIFEST_PARSED, (evt, data) => {
+      setupQualityChips(data.levels);
+      afterVideoReady(audioUrl);
+    });
+  } else {
+    // Safari / native HLS path
+    video.src = videoUrl;
+    video.addEventListener("loadedmetadata", () => afterVideoReady(audioUrl), { once: true });
+    video.addEventListener("error", () => setStatus("Video failed to load. Check the URL / CORS.", "error"), { once: true });
+  }
+}
 
-  hlsVideo.on(Hls.Events.ERROR, (_, d) => {
-    if (d.fatal) setStatus("Video error: " + d.details, "error");
-  });
+function afterVideoReady(audioUrl) {
+  playBtn.disabled = false;
+  showBuffering(false);
+  if (audioUrl) {
+    // If the video also carries its own audio, mute it so the separate
+    // track is the only thing heard (avoids double/echoed audio).
+    video.muted = true;
+    loadAudio(audioUrl);
+  } else {
+    video.muted = false;
+    setStatus("Video loaded — playing with its own audio (if any).", "ok");
+    ctrlBar.style.display = "flex";
+    document.getElementById("chipAudio").parentElement.style.display = "none";
+    document.getElementById("chipVolSync").parentElement.previousElementSibling && null;
+  }
+  attemptPlay();
 }
 
 function loadAudio(url) {
   audioEl = new Audio();
+  audioEl.crossOrigin = "anonymous";
   audioEl.volume = video.volume;
   audioEl.muted  = false;
+  document.getElementById("chipAudio").parentElement.style.display = "flex";
 
-  hlsAudio = new Hls();
-  hlsAudio.loadSource(url);
-  hlsAudio.attachMedia(audioEl);
+  const canUseHlsJs = typeof Hls !== "undefined" && Hls.isSupported();
 
-  hlsAudio.on(Hls.Events.MANIFEST_PARSED, () => {
+  const ready = () => {
     audioEl.currentTime = video.currentTime;
-    if (!video.paused) audioEl.play().catch(() => {});
     attachEvents();
     startSyncLoop();
     ctrlBar.style.display = "flex";
-    setStatus("Playing — video + audio synced.", "ok");
+    setStatus("Playing — video + separate audio, synced.", "ok");
     syncBadge.classList.add("visible");
-  });
+    attemptPlay();
+  };
 
-  hlsAudio.on(Hls.Events.ERROR, (_, d) => {
-    if (d.fatal) setStatus("Audio error: " + d.details + " — playing video only.", "error");
+  if (canUseHlsJs) {
+    hlsAudio = new Hls();
+    attachVideoErrorHandling(hlsAudio, "audio");
+    hlsAudio.loadSource(url);
+    hlsAudio.attachMedia(audioEl);
+    hlsAudio.on(Hls.Events.MANIFEST_PARSED, ready);
+  } else if (nativeCanPlayHls()) {
+    audioEl.src = url;
+    audioEl.addEventListener("loadedmetadata", ready, { once: true });
+    audioEl.addEventListener("error", () => setStatus("Audio failed to load — playing video only.", "error"), { once: true });
+  } else {
+    setStatus("Browser can't decode the audio stream — playing video only.", "error");
+  }
+}
+
+function attachVideoErrorHandling(hlsInstance, label) {
+  hlsInstance.on(Hls.Events.ERROR, (_, data) => {
+    if (!data.fatal) return;
+    switch (data.type) {
+      case Hls.ErrorTypes.NETWORK_ERROR:
+        setStatus(label + " network hiccup, retrying...", "loading");
+        hlsInstance.startLoad();
+        break;
+      case Hls.ErrorTypes.MEDIA_ERROR:
+        setStatus(label + " media error, recovering...", "loading");
+        hlsInstance.recoverMediaError();
+        break;
+      default:
+        setStatus("Fatal " + label + " error: " + data.details, "error");
+        hlsInstance.destroy();
+        if (label === "video") hlsVideo = null; else hlsAudio = null;
+        break;
+    }
   });
+}
+
+function setupQualityChips(levels) {
+  if (!levels || levels.length < 2) {
+    qualityGroup.style.display = "none";
+    qualitySep.style.display = "none";
+    return;
+  }
+  qualityGroup.style.display = "flex";
+  qualitySep.style.display = "block";
+  qualityChips.innerHTML = "";
+
+  const autoChip = document.createElement("span");
+  autoChip.className = "chip active";
+  autoChip.textContent = "Auto";
+  autoChip.onclick = () => selectLevel(-1, autoChip);
+  qualityChips.appendChild(autoChip);
+
+  levels.forEach((lvl, i) => {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.textContent = lvl.height ? lvl.height + "p" : Math.round(lvl.bitrate / 1000) + "k";
+    chip.onclick = () => selectLevel(i, chip);
+    qualityChips.appendChild(chip);
+  });
+}
+
+function selectLevel(index, chipEl) {
+  if (!hlsVideo) return;
+  hlsVideo.currentLevel = index;
+  [...qualityChips.children].forEach(c => c.classList.remove("active"));
+  chipEl.classList.add("active");
+}
+
+function attemptPlay() {
+  const p = video.play();
+  if (p && p.catch) {
+    p.then(() => { playOverlay.classList.remove("visible"); })
+     .catch(() => { playOverlay.classList.add("visible"); });
+  } else {
+    playOverlay.classList.remove("visible");
+  }
+}
+
+function manualPlay() {
+  playOverlay.classList.remove("visible");
+  video.muted = usingSeparateAudio ? true : video.muted;
+  video.play().catch(() => {});
+  if (audioEl && audioOn) audioEl.play().catch(() => {});
+}
+
+function showBuffering(on) {
+  bufferOverlay.classList.toggle("visible", on);
 }
 
 function attachEvents() {
   video.addEventListener("play",   onPlay);
   video.addEventListener("pause",  onPause);
   video.addEventListener("seeked", onSeeked);
+  video.addEventListener("seeking",onSeeking);
   video.addEventListener("volumechange", onVolChange);
+  video.addEventListener("waiting", onWaiting);
+  video.addEventListener("playing", onPlaying);
+  video.addEventListener("ratechange", onRateChange);
 }
 
-function onPlay()       { if (audioEl && audioOn) { audioEl.currentTime = video.currentTime; audioEl.play().catch(()=>{}); } }
-function onPause()      { if (audioEl) audioEl.pause(); }
-function onSeeked()     { if (audioEl) { audioEl.currentTime = video.currentTime; if (!video.paused && audioOn) audioEl.play().catch(()=>{}); } }
-function onVolChange()  { if (audioEl && volSyncOn) audioEl.volume = video.volume; }
+function onPlay()  { if (audioEl && audioOn) { audioEl.currentTime = video.currentTime; audioEl.play().catch(()=>{}); } }
+function onPause() { if (audioEl) audioEl.pause(); }
+function onSeeking(){ if (audioEl) audioEl.pause(); }
+function onSeeked(){ if (audioEl) { audioEl.currentTime = video.currentTime; if (!video.paused && audioOn) audioEl.play().catch(()=>{}); } }
+function onVolChange(){ if (audioEl && volSyncOn) audioEl.volume = video.muted ? 0 : video.volume; }
+function onWaiting(){ showBuffering(true); if (audioEl) audioEl.pause(); }
+function onPlaying(){ showBuffering(false); if (audioEl && audioOn && video.currentTime) { audioEl.currentTime = video.currentTime; audioEl.play().catch(()=>{}); } }
+function onRateChange(){ if (audioEl) audioEl.playbackRate = video.playbackRate; }
 
 function startSyncLoop() {
   if (syncTimer) clearInterval(syncTimer);
   syncTimer = setInterval(() => {
-    if (!audioEl) return;
-    const drift = Math.abs(audioEl.currentTime - video.currentTime);
-    driftVal.textContent = drift.toFixed(2) + "s";
-    driftVal.className = "drift" + (drift > 0.5 ? " warn" : "");
-    if (drift > 0.5) { audioEl.currentTime = video.currentTime; }
-  }, 500);
+    if (!audioEl || video.paused || audioEl.paused) return;
+    const drift = audioEl.currentTime - video.currentTime;
+    const absDrift = Math.abs(drift);
+    driftVal.textContent = absDrift.toFixed(2) + "s";
+    driftVal.className = "drift" + (absDrift > 0.5 ? " warn" : "");
+
+    if (absDrift > 0.5) {
+      // big drift: hard resync
+      audioEl.currentTime = video.currentTime;
+      audioEl.playbackRate = 1;
+    } else if (absDrift > 0.08) {
+      // small drift: nudge playback rate instead of jarring seeks
+      audioEl.playbackRate = drift > 0 ? 0.97 : 1.03;
+    } else {
+      audioEl.playbackRate = 1;
+    }
+  }, 300);
 }
 
 function forceResync() {
   if (!audioEl) return;
   audioEl.currentTime = video.currentTime;
+  audioEl.playbackRate = 1;
   if (!video.paused && audioOn) audioEl.play().catch(() => {});
   setStatus("Resynced audio to video.", "ok");
 }
@@ -478,12 +685,23 @@ function destroyAll() {
   video.removeEventListener("play",         onPlay);
   video.removeEventListener("pause",        onPause);
   video.removeEventListener("seeked",       onSeeked);
+  video.removeEventListener("seeking",      onSeeking);
   video.removeEventListener("volumechange", onVolChange);
+  video.removeEventListener("waiting",      onWaiting);
+  video.removeEventListener("playing",      onPlaying);
+  video.removeEventListener("ratechange",   onRateChange);
   if (hlsAudio) { hlsAudio.destroy(); hlsAudio = null; }
   if (hlsVideo) { hlsVideo.destroy(); hlsVideo = null; }
-  if (audioEl)  { audioEl.pause(); audioEl = null; }
-  video.src = "";
+  if (audioEl)  { audioEl.pause(); audioEl.src = ""; audioEl = null; }
+  video.pause();
+  video.removeAttribute("src");
+  video.load();
+  video.muted = false;
   syncBadge.classList.remove("visible");
+  playOverlay.classList.remove("visible");
+  bufferOverlay.classList.remove("visible");
+  qualityGroup.style.display = "none";
+  qualitySep.style.display = "none";
 }
 
 function clearAll() {
@@ -493,7 +711,7 @@ function clearAll() {
   tips.style.display = "grid";
   document.getElementById("videoUrl").value = "";
   document.getElementById("audioUrl").value = "";
-  setStatus("Paste your stream URLs above and press Load & Play.");
+  setStatus("Paste your stream URL(s) above and press Load & Play.");
 }
 
 document.getElementById("videoUrl").addEventListener("keydown", e => { if (e.key === "Enter") startPlayer(); });
