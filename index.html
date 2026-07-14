@@ -111,6 +111,157 @@
 
   .hint { font-size: 11px; color: var(--muted); }
 
+  /* ── CORS Proxy Panel ── */
+  .proxy-panel {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .proxy-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .proxy-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .proxy-title .shield { font-size: 13px; }
+
+  .proxy-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    cursor: pointer;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    transition: 0.2s;
+  }
+  .toggle-slider::before {
+    content: "";
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 2px; top: 2px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+  .toggle-switch input:checked + .toggle-slider { background: var(--accent-dim); border-color: var(--accent); }
+  .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); background: var(--accent); }
+
+  .toggle-label { font-size: 12px; color: var(--muted); }
+
+  .proxy-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .proxy-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.12s;
+    user-select: none;
+  }
+  .proxy-chip:hover { border-color: var(--border2); color: var(--text); }
+  .proxy-chip.selected {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: #c4b5fd;
+  }
+  .proxy-chip.testing { border-color: var(--amber); color: var(--amber); }
+  .proxy-chip.ok      { border-color: var(--green); color: var(--green); }
+  .proxy-chip.fail    { border-color: var(--red);   color: var(--red); opacity: 0.6; }
+  .proxy-chip .pip {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+
+  .proxy-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .proxy-btn {
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.12s;
+    font-family: inherit;
+  }
+  .proxy-btn:hover { color: var(--text); border-color: var(--border2); }
+  .proxy-btn.primary { background: var(--accent-dim); border-color: var(--accent); color: #c4b5fd; }
+
+  .proxy-mode-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .proxy-mode-label { font-size: 11px; color: var(--muted); }
+  .mode-chip {
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--muted);
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: all 0.12s;
+    font-family: inherit;
+  }
+  .mode-chip:hover { color: var(--text); border-color: var(--border2); }
+  .mode-chip.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: #c4b5fd;
+    font-weight: 700;
+  }
+
   .btn-row {
     display: flex;
     gap: 10px;
@@ -169,7 +320,6 @@
     background: #000;
   }
 
-  /* overlay for autoplay-blocked / buffering states */
   .overlay {
     position: absolute;
     inset: 0;
@@ -191,6 +341,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    font-weight: 600;
   }
   .spinner {
     width: 34px; height: 34px;
@@ -272,7 +426,6 @@
   .status-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-  /* ── Sync badge ── */
   .sync-badge {
     margin-left: auto;
     font-size: 11px;
@@ -282,6 +435,22 @@
   .sync-badge.visible { display: block; }
   .sync-badge .drift { color: var(--green); font-weight: 600; }
   .sync-badge .drift.warn { color: var(--amber); }
+
+  /* proxy active indicator in status */
+  .proxy-active-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(139,92,246,0.12);
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 10.5px;
+    color: #c4b5fd;
+    font-weight: 600;
+    display: none;
+  }
+  .proxy-active-badge.visible { display: inline-flex; }
 
   /* ── Tips ── */
   .tips {
@@ -300,12 +469,7 @@
     gap: 10px;
     align-items: flex-start;
   }
-  .tip-icon {
-    font-size: 18px;
-    line-height: 1;
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
+  .tip-icon { font-size: 18px; line-height: 1; flex-shrink: 0; margin-top: 1px; }
   .tip-text { font-size: 12px; color: var(--muted); line-height: 1.5; }
   .tip-text strong { color: var(--text); display: block; margin-bottom: 2px; font-size: 12px; }
 
@@ -333,19 +497,33 @@
   }
   .diag ul { margin: 6px 0 0 18px; }
   .diag li { margin-bottom: 3px; }
+
+  /* ── Info banner ── */
+  .info-banner {
+    width: 100%;
+    max-width: 900px;
+    background: rgba(139,92,246,0.08);
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--muted);
+    display: none;
+  }
+  .info-banner.visible { display: block; }
+  .info-banner strong { color: #c4b5fd; }
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M8 5v14l11-7z"/>
-    </svg>
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>
   </div>
   <div>
     <h1>HLS Mux Player</h1>
-    <p>Plays any .m3u8 stream — single combined stream, or a soundless video muxed live with a separate audio track</p>
+    <p>Plays any .m3u8 stream — with built-in CORS proxy fallback support</p>
   </div>
 </header>
 
@@ -354,16 +532,52 @@
     <label class="input-label" for="videoUrl">
       <span class="dot dot-video"></span> Video stream URL (.m3u8) — required
     </label>
-    <input type="text" id="videoUrl" placeholder="https://cdn.example.com/.../video/1080/playlist.m3u8 (or a full master playlist with audio already inside)" spellcheck="false"/>
-    <span class="hint">Can be a plain video-only stream, or a normal master playlist that already has audio — both work.</span>
+    <input type="text" id="videoUrl" placeholder="https://cdn.example.com/.../video/1080/playlist.m3u8" spellcheck="false"/>
+    <span class="hint">Can be a plain video-only stream, or a master playlist that already has audio.</span>
   </div>
   <div class="input-row">
     <label class="input-label" for="audioUrl">
       <span class="dot dot-audio"></span> Audio stream URL (.m3u8) — optional
     </label>
     <input type="text" id="audioUrl" placeholder="https://cdn.example.com/.../audio/1_en/playlist.m3u8" spellcheck="false"/>
-    <span class="hint">Only needed if the video stream has no audio of its own. When set, the video's own audio (if any) is muted automatically so you don't get double sound.</span>
+    <span class="hint">Only needed if the video stream has no audio. Video's own audio is muted automatically to avoid double sound.</span>
   </div>
+
+  <!-- CORS Proxy Panel -->
+  <div class="proxy-panel">
+    <div class="proxy-header">
+      <span class="proxy-title"><span class="shield">🛡️</span> CORS Proxy</span>
+      <label class="proxy-toggle">
+        <label class="toggle-switch">
+          <input type="checkbox" id="proxyEnabled" onchange="onProxyToggle()"/>
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label" id="proxyToggleLabel">Disabled</span>
+      </label>
+    </div>
+
+    <div id="proxyOptions" style="display:none; flex-direction:column; gap:10px;">
+      <div class="proxy-mode-row">
+        <span class="proxy-mode-label">Mode:</span>
+        <button class="mode-chip active" id="modeAuto" onclick="setMode('auto')">Auto-fallback</button>
+        <button class="mode-chip" id="modeManual" onclick="setMode('manual')">Pick one</button>
+      </div>
+
+      <div class="proxy-list" id="proxyList"></div>
+
+      <div class="proxy-actions">
+        <button class="proxy-btn primary" onclick="testAllProxies()">🔍 Test all proxies</button>
+        <button class="proxy-btn" onclick="resetProxyStatus()">↺ Reset status</button>
+      </div>
+
+      <span class="hint">
+        <strong style="color:var(--amber)">⚠ Public proxies</strong> — use only for public streams. 
+        In <em>Auto-fallback</em> mode the player tries direct first, then each proxy in order until one works.
+        In <em>Pick one</em> mode your selected proxy is always used.
+      </span>
+    </div>
+  </div>
+
   <div class="btn-row">
     <button class="btn-play" id="playBtn" onclick="startPlayer()">Load &amp; Play</button>
     <button class="btn-clear" onclick="clearAll()">Clear</button>
@@ -373,14 +587,17 @@
 <div class="status-bar">
   <div class="status-dot" id="statusDot"></div>
   <span id="statusText">Paste your stream URL(s) above and press Load &amp; Play.</span>
+  <span class="proxy-active-badge" id="proxyBadge">🛡 proxy</span>
   <span class="sync-badge" id="syncBadge">Drift: <span class="drift" id="driftVal">0.00s</span></span>
 </div>
+
+<div class="info-banner" id="infoBanner"></div>
 
 <div class="player-wrap" id="playerWrap">
   <div class="video-shell">
     <video id="video" controls playsinline></video>
     <div class="overlay" id="playOverlay">
-      <div class="overlay-btn" onclick="manualPlay()">▶ Click to play</div>
+      <button class="overlay-btn" onclick="manualPlay()">▶ Click to play</button>
     </div>
     <div class="overlay" id="bufferOverlay">
       <div class="spinner"></div>
@@ -421,16 +638,244 @@
     <div class="tip-text"><strong>Separate audio URL</strong>Only fill this in if your video stream is silent on its own.</div>
   </div>
   <div class="tip">
-    <div class="tip-icon">⚡</div>
-    <div class="tip-text"><strong>Auto-sync</strong>Audio stays locked to video with smooth micro-adjustments, hard resync on big drift.</div>
+    <div class="tip-icon">🛡️</div>
+    <div class="tip-text"><strong>CORS proxy</strong>Enable the proxy panel if your stream is blocked by CORS. Auto mode tries proxies one by one.</div>
   </div>
   <div class="tip">
-    <div class="tip-icon">🌐</div>
-    <div class="tip-text"><strong>CORS notice</strong>Stream servers must allow browser (CORS) requests, or playback will fail.</div>
+    <div class="tip-icon">⚡</div>
+    <div class="tip-text"><strong>Auto-sync</strong>Audio stays locked to video with smooth micro-adjustments, hard resync on big drift.</div>
   </div>
 </div>
 
 <script>
+// ─────────────────────────────────────────────
+//  CORS PROXY REGISTRY
+//  Each entry: { id, name, wrap(url) → proxiedUrl }
+// ─────────────────────────────────────────────
+const PROXIES = [
+  {
+    id: "direct",
+    name: "Direct (no proxy)",
+    wrap: url => url,
+    _status: "idle"
+  },
+  {
+    id: "corsproxy_io",
+    name: "corsproxy.io",
+    wrap: url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+    _status: "idle"
+  },
+  {
+    id: "allorigins",
+    name: "allorigins.win",
+    // allorigins returns JSON; for raw binary streams we use /raw/get
+    wrap: url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    _status: "idle"
+  },
+  {
+    id: "cors_sh",
+    name: "cors.sh",
+    wrap: url => `https://proxy.cors.sh/${url}`,
+    _status: "idle"
+  },
+  {
+    id: "thingproxy",
+    name: "thingproxy.freeboard.io",
+    wrap: url => `https://thingproxy.freeboard.io/fetch/${url}`,
+    _status: "idle"
+  },
+  {
+    id: "codetabs",
+    name: "api.codetabs.com",
+    wrap: url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    _status: "idle"
+  },
+  {
+    id: "htmldriven",
+    name: "cors-proxy.htmldriven.com",
+    wrap: url => `https://cors-proxy.htmldriven.com/?url=${encodeURIComponent(url)}`,
+    _status: "idle"
+  }
+];
+
+// ─────────────────────────────────────────────
+//  PROXY STATE
+// ─────────────────────────────────────────────
+let proxyMode        = "auto";   // "auto" | "manual"
+let selectedProxyId  = "direct"; // used in manual mode
+let activeProxyId    = null;     // proxy actually being used right now
+let proxyEnabled     = false;
+
+function onProxyToggle() {
+  proxyEnabled = document.getElementById("proxyEnabled").checked;
+  document.getElementById("proxyToggleLabel").textContent = proxyEnabled ? "Enabled" : "Disabled";
+  document.getElementById("proxyOptions").style.display = proxyEnabled ? "flex" : "none";
+  if (proxyEnabled) renderProxyChips();
+}
+
+function setMode(m) {
+  proxyMode = m;
+  document.getElementById("modeAuto").classList.toggle("active", m === "auto");
+  document.getElementById("modeManual").classList.toggle("active", m === "manual");
+  renderProxyChips();
+}
+
+function renderProxyChips() {
+  const list = document.getElementById("proxyList");
+  list.innerHTML = "";
+  PROXIES.forEach(p => {
+    const chip = document.createElement("span");
+    chip.className = "proxy-chip";
+    chip.dataset.id = p.id;
+    chip.innerHTML = `<span class="pip"></span>${p.name}`;
+
+    if (p._status === "ok")      chip.classList.add("ok");
+    else if (p._status === "fail") chip.classList.add("fail");
+    else if (p._status === "testing") chip.classList.add("testing");
+
+    if (proxyMode === "manual" && p.id === selectedProxyId) chip.classList.add("selected");
+    if (proxyMode === "auto")   chip.classList.add("selected"); // all highlighted as candidates
+
+    if (proxyMode === "manual") {
+      chip.onclick = () => {
+        selectedProxyId = p.id;
+        renderProxyChips();
+      };
+    }
+
+    list.appendChild(chip);
+  });
+}
+
+// Quick reachability test: fetch the proxy's wrapped version of a tiny known URL
+// We use a small known-CORS-blocked stream manifest snippet.
+// We test with a known public resource just to see if the proxy itself responds.
+const TEST_URL = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+
+async function testProxy(proxy) {
+  setProxyStatus(proxy.id, "testing");
+  const wrapped = proxy.id === "direct" ? TEST_URL : proxy.wrap(TEST_URL);
+  try {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 6000);
+    const res  = await fetch(wrapped, { method: "HEAD", signal: ctrl.signal });
+    clearTimeout(tid);
+    setProxyStatus(proxy.id, res.ok || res.status === 206 ? "ok" : "fail");
+  } catch {
+    setProxyStatus(proxy.id, "fail");
+  }
+}
+
+async function testAllProxies() {
+  showInfo("Testing all proxies… this may take up to 10 seconds.");
+  await Promise.all(PROXIES.map(p => testProxy(p)));
+  const ok = PROXIES.filter(p => p._status === "ok").map(p => p.name);
+  if (ok.length) showInfo(`✅ Reachable: ${ok.join(", ")}`);
+  else showInfo("❌ No proxy responded successfully. CORS will still block direct playback.");
+}
+
+function setProxyStatus(id, status) {
+  const p = PROXIES.find(p => p.id === id);
+  if (p) p._status = status;
+  renderProxyChips();
+}
+
+function resetProxyStatus() {
+  PROXIES.forEach(p => p._status = "idle");
+  renderProxyChips();
+}
+
+function getProxyForUrl(url) {
+  if (!proxyEnabled) return url;
+  if (proxyMode === "manual") {
+    const p = PROXIES.find(p => p.id === selectedProxyId) || PROXIES[0];
+    activeProxyId = p.id;
+    return p.wrap(url);
+  }
+  // auto mode: return the url as-is; fallback logic handled by tryLoadWithFallback()
+  return url;
+}
+
+// ─────────────────────────────────────────────
+//  AUTO-FALLBACK LOADER
+//  Tries direct first, then each proxy in order.
+//  Resolves with { hlsInstance, proxyId } or rejects.
+// ─────────────────────────────────────────────
+function tryLoadWithFallback(rawUrl, mediaEl, label) {
+  return new Promise((resolve, reject) => {
+    if (!proxyEnabled || proxyMode !== "auto") {
+      // single attempt — use whatever getProxyForUrl returns
+      const url = getProxyForUrl(rawUrl);
+      const hls = buildHls(url, mediaEl, label,
+        () => resolve({ hls, proxyId: activeProxyId }),
+        err  => reject(err)
+      );
+      return;
+    }
+
+    // auto fallback: try each proxy in sequence
+    let idx = 0;
+    function tryNext() {
+      if (idx >= PROXIES.length) {
+        reject(new Error("All proxies exhausted."));
+        return;
+      }
+      const proxy = PROXIES[idx++];
+      const url   = proxy.wrap(rawUrl);
+      setStatus(`Trying ${proxy.name}…`, "loading");
+      let settled = false;
+      const hls = buildHls(url, mediaEl, label,
+        () => {
+          if (settled) return;
+          settled = true;
+          activeProxyId = proxy.id;
+          resolve({ hls, proxyId: proxy.id });
+        },
+        () => {
+          if (settled) return;
+          settled = true;
+          hls.destroy();
+          tryNext();
+        }
+      );
+    }
+    tryNext();
+  });
+}
+
+function buildHls(url, mediaEl, label, onSuccess, onFail) {
+  const hls = new Hls({
+    enableWorker: true,
+    lowLatencyMode: false,
+    maxBufferLength: 30,
+    backBufferLength: 60
+  });
+
+  let settled = false;
+
+  hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    if (!settled) { settled = true; onSuccess(hls); }
+  });
+
+  hls.on(Hls.Events.ERROR, (_, data) => {
+    if (!data.fatal) return;
+    if (!settled) { settled = true; onFail(data); }
+    else {
+      // fatal error after success: built-in recovery
+      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
+      else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+      else { hls.destroy(); setStatus("Fatal " + label + " error: " + data.details, "error"); }
+    }
+  });
+
+  hls.loadSource(url);
+  hls.attachMedia(mediaEl);
+  return hls;
+}
+
+// ─────────────────────────────────────────────
+//  PLAYER STATE
+// ─────────────────────────────────────────────
 const video        = document.getElementById("video");
 const statusDot    = document.getElementById("statusDot");
 const statusTxt    = document.getElementById("statusText");
@@ -446,6 +891,7 @@ const qualityGroup = document.getElementById("qualityGroup");
 const qualitySep   = document.getElementById("qualitySep");
 const qualityChips = document.getElementById("qualityChips");
 const diagBox      = document.getElementById("diagBox");
+const proxyBadge   = document.getElementById("proxyBadge");
 
 let hlsVideo   = null;
 let hlsAudio   = null;
@@ -454,7 +900,7 @@ let syncTimer  = null;
 let volSyncOn  = true;
 let audioOn    = true;
 let usingSeparateAudio = false;
-let nativeHls  = false; // Safari native playback path
+let nativeHls  = false;
 let videoRetries = 0;
 let audioRetries = 0;
 const MAX_RETRIES = 3;
@@ -467,45 +913,63 @@ function hideDiag() {
   diagBox.classList.remove("visible");
   diagBox.innerHTML = "";
 }
+function showInfo(msg) {
+  const b = document.getElementById("infoBanner");
+  b.innerHTML = msg;
+  b.classList.add("visible");
+}
+function hideInfo() {
+  const b = document.getElementById("infoBanner");
+  b.classList.remove("visible");
+}
 
 function setStatus(msg, state) {
   statusTxt.textContent = msg;
   statusDot.className   = "status-dot" + (state ? " " + state : "");
 }
 
-function nativeCanPlayHls() {
-  const test = document.createElement("video");
-  return test.canPlayType("application/vnd.apple.mpegurl") !== "";
+function updateProxyBadge() {
+  if (activeProxyId && activeProxyId !== "direct") {
+    const p = PROXIES.find(p => p.id === activeProxyId);
+    proxyBadge.textContent = "🛡 " + (p ? p.name : "proxy");
+    proxyBadge.classList.add("visible");
+  } else {
+    proxyBadge.classList.remove("visible");
+  }
 }
 
-function startPlayer() {
+function nativeCanPlayHls() {
+  const t = document.createElement("video");
+  return t.canPlayType("application/vnd.apple.mpegurl") !== "";
+}
+
+async function startPlayer() {
   const videoUrl = document.getElementById("videoUrl").value.trim();
   const audioUrl = document.getElementById("audioUrl").value.trim();
-
   if (!videoUrl) { setStatus("Video URL is required.", "error"); return; }
 
   destroyAll();
   hideDiag();
-  videoRetries = 0;
-  audioRetries = 0;
+  hideInfo();
+  activeProxyId    = null;
+  videoRetries     = 0;
+  audioRetries     = 0;
   usingSeparateAudio = !!audioUrl;
   playBtn.disabled = true;
   setStatus("Loading video...", "loading");
   playerWrap.classList.add("visible");
   tips.style.display = "none";
   showBuffering(true);
+  updateProxyBadge();
 
-  // Mixed-content check: an https page can't load an http:// stream — the
-  // browser blocks it silently before hls.js ever gets a chance.
+  // Mixed-content guard
   if (location.protocol === "https:" && videoUrl.startsWith("http://")) {
     showDiag(
-      "<strong>Blocked: mixed content.</strong> This page is loaded over " +
-      "<code>https://</code> but the video URL starts with <code>http://</code>. " +
-      "Browsers block insecure (http) media on secure (https) pages, with no error " +
-      "shown in the player itself — it just silently fails. Use an <code>https://</code> " +
-      "version of the stream, or host this page over plain http."
+      "<strong>Blocked: mixed content.</strong> This page is <code>https://</code> but the stream is " +
+      "<code>http://</code>. Browsers silently block insecure media on secure pages. Use an " +
+      "<code>https://</code> stream or host this page over plain http."
     );
-    setStatus("Blocked by the browser (mixed content).", "error");
+    setStatus("Blocked by browser (mixed content).", "error");
     playBtn.disabled = false;
     showBuffering(false);
     return;
@@ -522,72 +986,90 @@ function startPlayer() {
   }
 
   if (canUseHlsJs) {
-    hlsVideo = new Hls({
-      enableWorker: true,
-      lowLatencyMode: false,
-      maxBufferLength: 30,
-      backBufferLength: 60
-    });
-    attachVideoErrorHandling(hlsVideo, "video");
-    hlsVideo.loadSource(videoUrl);
-    hlsVideo.attachMedia(video);
+    try {
+      const result = await tryLoadWithFallback(videoUrl, video, "video");
+      hlsVideo = result.hls;
+      activeProxyId = result.proxyId;
+      updateProxyBadge();
 
-    hlsVideo.on(Hls.Events.MANIFEST_PARSED, (evt, data) => {
-      setupQualityChips(data.levels);
-      afterVideoReady(audioUrl);
-    });
+      // quality chips
+      const levels = hlsVideo.levels;
+      if (levels && levels.length >= 2) setupQualityChips(levels);
+
+      await afterVideoReady(audioUrl, videoUrl, canUseHlsJs);
+    } catch (err) {
+      playBtn.disabled = false;
+      showBuffering(false);
+      setStatus("Video failed to load after trying all proxies.", "error");
+      showDiag(
+        "<strong>All sources failed.</strong> The stream could not be loaded directly or through any CORS proxy. " +
+        "Common causes: " +
+        "<ul>" +
+        "<li>The stream server blocks cross-origin requests (<code>CORS</code>) and the proxies couldn't reach it either.</li>" +
+        "<li>The URL is expired, requires authentication, or the stream is offline.</li>" +
+        "<li>Some proxies are rate-limited or down — click <em>Test all proxies</em> to find working ones.</li>" +
+        "</ul>" +
+        "Try enabling the proxy panel and clicking <em>Test all proxies</em> to see which proxies work, then switch to <em>Pick one</em> mode and select a green one."
+      );
+    }
   } else {
-    // Safari / native HLS path
+    // Safari native path (no proxy wrapping possible in src= mode)
     video.src = videoUrl;
-    video.addEventListener("loadedmetadata", () => afterVideoReady(audioUrl), { once: true });
-    video.addEventListener("error", () => setStatus("Video failed to load. Check the URL / CORS.", "error"), { once: true });
+    video.addEventListener("loadedmetadata", () => afterVideoReady(audioUrl, videoUrl, false), { once: true });
+    video.addEventListener("error", () => {
+      setStatus("Video failed to load. Check the URL.", "error");
+      playBtn.disabled = false;
+      showBuffering(false);
+    }, { once: true });
   }
 }
 
-function afterVideoReady(audioUrl) {
+async function afterVideoReady(audioUrl, rawAudioUrl, canUseHlsJs) {
   playBtn.disabled = false;
   showBuffering(false);
   hideDiag();
+
   if (audioUrl) {
-    // If the video also carries its own audio, mute it so the separate
-    // track is the only thing heard (avoids double/echoed audio).
     video.muted = true;
-    loadAudio(audioUrl);
+    await loadAudio(audioUrl, canUseHlsJs);
   } else {
     video.muted = false;
     setStatus("Video loaded — playing with its own audio (if any).", "ok");
     ctrlBar.style.display = "flex";
     document.getElementById("chipAudio").parentElement.style.display = "none";
-    document.getElementById("chipVolSync").parentElement.previousElementSibling && null;
   }
   attemptPlay();
 }
 
-function loadAudio(url) {
+async function loadAudio(url, canUseHlsJs) {
   audioEl = new Audio();
   audioEl.crossOrigin = "anonymous";
   audioEl.volume = video.volume;
   audioEl.muted  = false;
   document.getElementById("chipAudio").parentElement.style.display = "flex";
 
-  const canUseHlsJs = typeof Hls !== "undefined" && Hls.isSupported();
-
   const ready = () => {
     audioEl.currentTime = video.currentTime;
     attachEvents();
     startSyncLoop();
     ctrlBar.style.display = "flex";
-    setStatus("Playing — video + separate audio, synced.", "ok");
+    const proxyNote = activeProxyId && activeProxyId !== "direct"
+      ? ` via ${PROXIES.find(p=>p.id===activeProxyId)?.name}`
+      : "";
+    setStatus("Playing — video + separate audio, synced" + proxyNote + ".", "ok");
     syncBadge.classList.add("visible");
-    attemptPlay();
+    updateProxyBadge();
   };
 
   if (canUseHlsJs) {
-    hlsAudio = new Hls();
-    attachVideoErrorHandling(hlsAudio, "audio");
-    hlsAudio.loadSource(url);
-    hlsAudio.attachMedia(audioEl);
-    hlsAudio.on(Hls.Events.MANIFEST_PARSED, ready);
+    try {
+      const result = await tryLoadWithFallback(url, audioEl, "audio");
+      hlsAudio = result.hls;
+      // if video already used a proxy, audio piggybacks on the same one
+      ready();
+    } catch {
+      setStatus("Audio failed to load — playing video only.", "error");
+    }
   } else if (nativeCanPlayHls()) {
     audioEl.src = url;
     audioEl.addEventListener("loadedmetadata", ready, { once: true });
@@ -597,85 +1079,20 @@ function loadAudio(url) {
   }
 }
 
-function attachVideoErrorHandling(hlsInstance, label) {
-  hlsInstance.on(Hls.Events.ERROR, (_, data) => {
-    if (!data.fatal) return;
-
-    if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-      const count = label === "video" ? ++videoRetries : ++audioRetries;
-
-      if (count > MAX_RETRIES) {
-        setStatus(label + " stream failed to load.", "error");
-        hlsInstance.destroy();
-        if (label === "video") hlsVideo = null; else hlsAudio = null;
-
-        const status = (data.response && data.response.code) || 0;
-        let detail;
-        if (status === 0) {
-          detail =
-            "<strong>Most likely cause: CORS.</strong> The " + label + " server never returned a " +
-            "response the browser is allowed to read — status code <code>0</code>. This is the " +
-            "signature of a CORS rejection or a hotlink/referrer block. " +
-            "<code>hls.js</code> has to fetch the playlist and every segment with JavaScript " +
-            "(<code>XHR</code>/<code>fetch</code>), and each of those requests needs the server to send " +
-            "<code>Access-Control-Allow-Origin</code>. A plain native player, VLC, or a bare " +
-            "<code>&lt;video src&gt;</code> load doesn't need that header, which is why the same URL " +
-            "\"just works\" outside this player." +
-            "<ul>" +
-            "<li>Open DevTools → Network tab, reload, and check the failed <code>.m3u8</code>/<code>.ts</code> " +
-            "requests — a red entry with no response and a CORS message in the Console confirms this.</li>" +
-            "<li>Fix: the origin server needs to send <code>Access-Control-Allow-Origin: *</code> " +
-            "(or your domain) on the manifest <em>and</em> segment responses.</li>" +
-            "<li>Workaround if you don't control the server: route requests through a CORS proxy you trust, " +
-            "or a small server-side relay you run yourself.</li>" +
-            "</ul>";
-        } else {
-          detail =
-            "<strong>" + label + " server returned HTTP " + status + ".</strong> That's not a CORS issue — " +
-            "the request reached the server but was rejected (expired/signed URL, auth required, or the " +
-            "asset no longer exists). Try opening the URL directly in a new tab to confirm it still loads.";
-        }
-        showDiag(detail);
-        return;
-      }
-
-      setStatus(label + " network hiccup, retrying... (" + count + "/" + MAX_RETRIES + ")", "loading");
-      hlsInstance.startLoad();
-      return;
-    }
-
-    if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-      setStatus(label + " media error, recovering...", "loading");
-      hlsInstance.recoverMediaError();
-      return;
-    }
-
-    setStatus("Fatal " + label + " error: " + data.details, "error");
-    hlsInstance.destroy();
-    if (label === "video") hlsVideo = null; else hlsAudio = null;
-  });
-}
-
 function setupQualityChips(levels) {
-  if (!levels || levels.length < 2) {
-    qualityGroup.style.display = "none";
-    qualitySep.style.display = "none";
-    return;
-  }
+  if (!levels || levels.length < 2) { qualityGroup.style.display="none"; qualitySep.style.display="none"; return; }
   qualityGroup.style.display = "flex";
-  qualitySep.style.display = "block";
+  qualitySep.style.display   = "block";
   qualityChips.innerHTML = "";
-
   const autoChip = document.createElement("span");
   autoChip.className = "chip active";
   autoChip.textContent = "Auto";
   autoChip.onclick = () => selectLevel(-1, autoChip);
   qualityChips.appendChild(autoChip);
-
   levels.forEach((lvl, i) => {
     const chip = document.createElement("span");
     chip.className = "chip";
-    chip.textContent = lvl.height ? lvl.height + "p" : Math.round(lvl.bitrate / 1000) + "k";
+    chip.textContent = lvl.height ? lvl.height+"p" : Math.round(lvl.bitrate/1000)+"k";
     chip.onclick = () => selectLevel(i, chip);
     qualityChips.appendChild(chip);
   });
@@ -691,8 +1108,8 @@ function selectLevel(index, chipEl) {
 function attemptPlay() {
   const p = video.play();
   if (p && p.catch) {
-    p.then(() => { playOverlay.classList.remove("visible"); })
-     .catch(() => { playOverlay.classList.add("visible"); });
+    p.then(() => playOverlay.classList.remove("visible"))
+     .catch(() => playOverlay.classList.add("visible"));
   } else {
     playOverlay.classList.remove("visible");
   }
@@ -710,20 +1127,20 @@ function showBuffering(on) {
 }
 
 function attachEvents() {
-  video.addEventListener("play",   onPlay);
-  video.addEventListener("pause",  onPause);
-  video.addEventListener("seeked", onSeeked);
-  video.addEventListener("seeking",onSeeking);
-  video.addEventListener("volumechange", onVolChange);
-  video.addEventListener("waiting", onWaiting);
-  video.addEventListener("playing", onPlaying);
-  video.addEventListener("ratechange", onRateChange);
+  video.addEventListener("play",        onPlay);
+  video.addEventListener("pause",       onPause);
+  video.addEventListener("seeked",      onSeeked);
+  video.addEventListener("seeking",     onSeeking);
+  video.addEventListener("volumechange",onVolChange);
+  video.addEventListener("waiting",     onWaiting);
+  video.addEventListener("playing",     onPlaying);
+  video.addEventListener("ratechange",  onRateChange);
 }
 
-function onPlay()  { if (audioEl && audioOn) { audioEl.currentTime = video.currentTime; audioEl.play().catch(()=>{}); } }
-function onPause() { if (audioEl) audioEl.pause(); }
+function onPlay()   { if (audioEl && audioOn) { audioEl.currentTime = video.currentTime; audioEl.play().catch(()=>{}); } }
+function onPause()  { if (audioEl) audioEl.pause(); }
 function onSeeking(){ if (audioEl) audioEl.pause(); }
-function onSeeked(){ if (audioEl) { audioEl.currentTime = video.currentTime; if (!video.paused && audioOn) audioEl.play().catch(()=>{}); } }
+function onSeeked() { if (audioEl) { audioEl.currentTime = video.currentTime; if (!video.paused && audioOn) audioEl.play().catch(()=>{}); } }
 function onVolChange(){ if (audioEl && volSyncOn) audioEl.volume = video.muted ? 0 : video.volume; }
 function onWaiting(){ showBuffering(true); if (audioEl) audioEl.pause(); }
 function onPlaying(){ showBuffering(false); if (audioEl && audioOn && video.currentTime) { audioEl.currentTime = video.currentTime; audioEl.play().catch(()=>{}); } }
@@ -737,17 +1154,9 @@ function startSyncLoop() {
     const absDrift = Math.abs(drift);
     driftVal.textContent = absDrift.toFixed(2) + "s";
     driftVal.className = "drift" + (absDrift > 0.5 ? " warn" : "");
-
-    if (absDrift > 0.5) {
-      // big drift: hard resync
-      audioEl.currentTime = video.currentTime;
-      audioEl.playbackRate = 1;
-    } else if (absDrift > 0.08) {
-      // small drift: nudge playback rate instead of jarring seeks
-      audioEl.playbackRate = drift > 0 ? 0.97 : 1.03;
-    } else {
-      audioEl.playbackRate = 1;
-    }
+    if      (absDrift > 0.5)  { audioEl.currentTime = video.currentTime; audioEl.playbackRate = 1; }
+    else if (absDrift > 0.08) { audioEl.playbackRate = drift > 0 ? 0.97 : 1.03; }
+    else                      { audioEl.playbackRate = 1; }
   }, 300);
 }
 
@@ -764,12 +1173,8 @@ function toggleAudio(chip) {
   chip.textContent = audioOn ? "On" : "Off";
   chip.classList.toggle("active", audioOn);
   if (!audioEl) return;
-  if (audioOn) {
-    audioEl.currentTime = video.currentTime;
-    if (!video.paused) audioEl.play().catch(() => {});
-  } else {
-    audioEl.pause();
-  }
+  if (audioOn) { audioEl.currentTime = video.currentTime; if (!video.paused) audioEl.play().catch(() => {}); }
+  else         { audioEl.pause(); }
 }
 
 function toggleVolSync(chip) {
@@ -780,14 +1185,17 @@ function toggleVolSync(chip) {
 
 function destroyAll() {
   if (syncTimer) { clearInterval(syncTimer); syncTimer = null; }
-  video.removeEventListener("play",         onPlay);
-  video.removeEventListener("pause",        onPause);
-  video.removeEventListener("seeked",       onSeeked);
-  video.removeEventListener("seeking",      onSeeking);
-  video.removeEventListener("volumechange", onVolChange);
-  video.removeEventListener("waiting",      onWaiting);
-  video.removeEventListener("playing",      onPlaying);
-  video.removeEventListener("ratechange",   onRateChange);
+  ["play","pause","seeked","seeking","volumechange","waiting","playing","ratechange"].forEach(ev => {
+    video.removeEventListener(ev, window["on"+ev.charAt(0).toUpperCase()+ev.slice(1)] || (()=>{}));
+  });
+  video.removeEventListener("play",        onPlay);
+  video.removeEventListener("pause",       onPause);
+  video.removeEventListener("seeked",      onSeeked);
+  video.removeEventListener("seeking",     onSeeking);
+  video.removeEventListener("volumechange",onVolChange);
+  video.removeEventListener("waiting",     onWaiting);
+  video.removeEventListener("playing",     onPlaying);
+  video.removeEventListener("ratechange",  onRateChange);
   if (hlsAudio) { hlsAudio.destroy(); hlsAudio = null; }
   if (hlsVideo) { hlsVideo.destroy(); hlsVideo = null; }
   if (audioEl)  { audioEl.pause(); audioEl.src = ""; audioEl = null; }
@@ -799,12 +1207,15 @@ function destroyAll() {
   playOverlay.classList.remove("visible");
   bufferOverlay.classList.remove("visible");
   qualityGroup.style.display = "none";
-  qualitySep.style.display = "none";
+  qualitySep.style.display   = "none";
+  proxyBadge.classList.remove("visible");
+  activeProxyId = null;
 }
 
 function clearAll() {
   destroyAll();
   hideDiag();
+  hideInfo();
   playerWrap.classList.remove("visible");
   ctrlBar.style.display = "none";
   tips.style.display = "grid";
@@ -816,6 +1227,5 @@ function clearAll() {
 document.getElementById("videoUrl").addEventListener("keydown", e => { if (e.key === "Enter") startPlayer(); });
 document.getElementById("audioUrl").addEventListener("keydown", e => { if (e.key === "Enter") startPlayer(); });
 </script>
-
 </body>
 </html>
