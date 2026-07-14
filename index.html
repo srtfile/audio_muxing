@@ -1,805 +1,311 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
-<meta charset="UTF-8"/>
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
-<title>AV Sync Player</title>
-
-<style>
-
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-
-:root{
-
-  --bg:#0a0a0d;--surface:#111116;--surface2:#18181f;--surface3:#1f1f28;
-
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-
-  --text:#ededf2;--muted:#7a7a95;
-
-  --accent:#e05c2a;--accent-dim:rgba(224,92,42,0.14);--accent2:#f07040;
-
-  --green:#22c55e;--red:#ef4444;--amber:#f59e0b;--radius:8px;
-
-}
-
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px 16px 56px;gap:18px}
-
-header{width:100%;max-width:880px;display:flex;align-items:center;gap:14px}
-
-.logo{width:40px;height:40px;background:linear-gradient(135deg,var(--accent),#c0392b);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(224,92,42,0.35)}
-
-.logo svg{width:22px;height:22px;fill:#fff}
-
-.header-text h1{font-size:17px;font-weight:700;letter-spacing:-0.3px}
-
-.header-text p{font-size:12px;color:var(--muted);margin-top:2px}
-
-
-
-/* tabs */
-
-.mode-tabs{width:100%;max-width:880px;display:flex;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px}
-
-.tab{flex:1;text-align:center;padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:all 0.15s;user-select:none;display:flex;align-items:center;justify-content:center;gap:6px}
-
-.tab:hover{color:var(--text);background:var(--surface2)}
-
-.tab.active{background:var(--accent-dim);color:var(--accent2);border:1px solid rgba(224,92,42,0.3)}
-
-
-
-/* card */
-
-.inputs-card{width:100%;max-width:880px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px}
-
-.panel{display:none;flex-direction:column;gap:14px}
-
-.panel.active{display:flex}
-
-.input-row{display:flex;flex-direction:column;gap:6px}
-
-.input-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:var(--muted);display:flex;align-items:center;gap:6px}
-
-.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-
-.dot-v{background:var(--accent2)}.dot-a{background:#60a5fa}.dot-e{background:#a78bfa}
-
-input[type=text]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;font-family:'Consolas','Courier New',monospace;padding:10px 14px;outline:none;transition:border-color 0.15s}
-
-input[type=text]:focus{border-color:var(--accent)}
-
-input[type=text]::placeholder{color:var(--muted)}
-
-.hint{font-size:11.5px;color:var(--muted);line-height:1.5}
-
-.hint code{background:var(--surface3);padding:1px 5px;border-radius:4px;font-family:'Consolas',monospace;font-size:11px;color:var(--accent2)}
-
-.btn-row{display:flex;gap:10px;margin-top:2px}
-
-button{cursor:pointer;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;padding:10px 20px;transition:opacity 0.15s,transform 0.1s;font-family:inherit}
-
-button:active{transform:scale(0.97)}
-
-.btn-play{background:linear-gradient(135deg,var(--accent),#c0392b);color:#fff;flex:1;box-shadow:0 3px 12px rgba(224,92,42,0.3)}
-
-.btn-play:hover{opacity:0.88}
-
-.btn-play:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none}
-
-.btn-clear{background:var(--surface3);color:var(--muted);border:1px solid var(--border)}
-
-.btn-clear:hover{color:var(--text);border-color:var(--border2)}
-
-
-
-/* status */
-
-.status-bar{width:100%;max-width:880px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);min-height:20px;flex-wrap:wrap}
-
-.status-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background 0.2s}
-
-.status-dot.ok{background:var(--green)}.status-dot.error{background:var(--red)}.status-dot.loading{background:var(--accent);animation:pulse 1s infinite}
-
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-
-.badge{display:none;align-items:center;gap:4px;border-radius:20px;padding:2px 8px;font-size:10.5px;font-weight:600}
-
-.badge.on{display:inline-flex}
-
-.badge-sync{background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.3);color:#60a5fa}
-
-.drift-readout{font-size:11px;color:var(--muted);font-family:'Consolas',monospace}
-
-.drift-readout.warn{color:var(--amber)}
-
-
-
-/* player */
-
-.player-wrap{width:100%;max-width:880px;background:#000;border-radius:14px;overflow:hidden;border:1px solid var(--border);display:none;position:relative}
-
-.player-wrap.on{display:block}
-
-.embed-shell{position:relative;padding-bottom:56.25%;height:0;background:#000;display:none}
-
-.embed-shell.on{display:block}
-
-.embed-shell iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
-
-.video-shell{position:relative;background:#000;display:none}
-
-.video-shell.on{display:block}
-
-video{width:100%;display:block;max-height:540px;background:#000}
-
-.overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);flex-direction:column;gap:10px;z-index:5}
-
-.overlay.on{display:flex}
-
-.overlay-btn{background:linear-gradient(135deg,var(--accent),#c0392b);color:#fff;padding:12px 28px;border-radius:30px;font-size:14px;display:flex;align-items:center;gap:8px;cursor:pointer;border:none;font-family:inherit;font-weight:600;box-shadow:0 4px 16px rgba(224,92,42,0.4)}
-
-.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
-
-@keyframes spin{to{transform:rotate(360deg)}}
-
-
-
-/* controls */
-
-.controls-bar{background:var(--surface);border-top:1px solid var(--border);padding:12px 16px;display:none;flex-wrap:wrap;gap:10px;align-items:center}
-
-.controls-bar.on{display:flex}
-
-.ctrl-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-
-.ctrl-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted)}
-
-.chip{background:var(--surface3);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:12px;font-weight:500;padding:4px 12px;cursor:pointer;transition:all 0.12s}
-
-.chip:hover{border-color:var(--border2);color:var(--text)}
-
-.chip.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent2);font-weight:600}
-
-.sep{width:1px;height:18px;background:var(--border2);margin:0 2px}
-
-
-
-/* diag */
-
-.diag{width:100%;max-width:880px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:14px 16px;font-size:12.5px;line-height:1.6;color:var(--text);display:none}
-
-.diag.on{display:block}
-
-.diag strong{color:var(--red)}
-
-.diag code{background:var(--surface3);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:11.5px}
-
-.diag ul{margin:6px 0 0 18px}
-
-.diag li{margin-bottom:3px}
-
-.info{width:100%;max-width:880px;background:rgba(224,92,42,0.07);border:1px solid rgba(224,92,42,0.25);border-radius:10px;padding:12px 16px;font-size:12px;line-height:1.6;color:var(--muted);display:none}
-
-.info.on{display:block}
-
-
-
-/* tips */
-
-.tips{width:100%;max-width:880px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
-
-.tip{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start}
-
-.tip-icon{font-size:18px;line-height:1;flex-shrink:0;margin-top:1px}
-
-.tip-text{font-size:12px;color:var(--muted);line-height:1.5}
-
-.tip-text strong{color:var(--text);display:block;margin-bottom:2px;font-size:12px}
-
-</style>
-
-</head>
-
-<body>
-
-
-
-<header>
-
-  <div class="logo"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
-
-  <div class="header-text">
-
-    <h1>AV Sync Player</h1>
-
-    <p>Pick a mode: mux video + audio files, or load an embed/iframe URL</p>
-
-  </div>
-
-</header>
-
-
-
-<!-- TABS -->
-
-<div class="mode-tabs">
-
-  <div class="tab active" id="tab-mux" onclick="switchTab('mux')">🎬 Video + Audio mux</div>
-
-  <div class="tab" id="tab-embed" onclick="switchTab('embed')">🔗 Embed / iFrame</div>
-
-</div>
-
-
-
-<div class="inputs-card">
-
-
-
-  <!-- MUX PANEL -->
-
-  <div class="panel active" id="panel-mux">
-
-    <div class="input-row">
-
-      <label class="input-label" for="videoUrl"><span class="dot dot-v"></span> Video URL (picture track)</label>
-
-      <input type="text" id="videoUrl" placeholder="https://example.com/video.mp4" spellcheck="false"/>
-
-      <span class="hint">Direct <code>.mp4</code> / <code>.webm</code> / <code>.mov</code> file. Should be silent, or its own audio will be muted.</span>
-
-    </div>
-
-    <div class="input-row">
-
-      <label class="input-label" for="audioUrl"><span class="dot dot-a"></span> Audio URL (sound track)</label>
-
-      <input type="text" id="audioUrl" placeholder="https://example.com/audio.mp3" spellcheck="false"/>
-
-      <span class="hint"><code>.mp3</code> / <code>.aac</code> / <code>.m4a</code> / <code>.wav</code> / <code>.ogg</code> — kept frame-locked to the video with auto drift correction.</span>
-
-    </div>
-
-  </div>
-
-
-
-  <!-- EMBED PANEL -->
-
-  <div class="panel" id="panel-embed">
-
-    <div class="input-row">
-
-      <label class="input-label" for="embedUrl"><span class="dot dot-e"></span> Embed / iFrame URL</label>
-
-      <input type="text" id="embedUrl" placeholder="https://www.youtube.com/embed/dQw4w9WgXcQ" spellcheck="false"/>
-
-      <span class="hint">YouTube / Vimeo watch links are auto-converted. Any other iframe-embeddable URL works too.</span>
-
-    </div>
-
-  </div>
-
-
-
-  <div class="btn-row">
-
-    <button class="btn-play" id="playBtn" onclick="startPlayer()">▶ Load &amp; Play</button>
-
-    <button class="btn-clear" onclick="clearAll()">Clear</button>
-
-  </div>
-
-</div>
-
-
-
-<div class="status-bar">
-
-  <div class="status-dot" id="statusDot"></div>
-
-  <span id="statusText">Choose a mode above, fill in the URL(s), then press Load &amp; Play.</span>
-
-  <span class="badge badge-sync" id="syncBadge">🔊 audio muxed</span>
-
-  <span class="drift-readout" id="driftEl"></span>
-
-</div>
-
-
-
-<div class="info" id="infoBanner"></div>
-
-
-
-<div class="player-wrap" id="playerWrap">
-
-  <!-- mux -->
-
-  <div class="video-shell" id="videoShell">
-
-    <video id="video" controls playsinline></video>
-
-    <audio id="audio" preload="auto" style="display:none"></audio>
-
-    <div class="overlay" id="playOverlay">
-
-      <button class="overlay-btn" onclick="manualPlay()">▶ Click to play</button>
-
-    </div>
-
-    <div class="overlay" id="bufferOverlay">
-
-      <div class="spinner"></div>
-
-    </div>
-
-  </div>
-
-  <!-- embed -->
-
-  <div class="embed-shell" id="embedShell"></div>
-
-
-
-  <div class="controls-bar" id="controlsBar">
-
-    <div class="ctrl-group" id="volGroup" style="display:none">
-
-      <span class="ctrl-label">Audio vol</span>
-
-      <input type="range" id="audioVol" min="0" max="1" step="0.05" value="1" oninput="audio.volume=+this.value" style="width:80px"/>
-
-    </div>
-
-    <div class="sep" id="volSep" style="display:none"></div>
-
-    <div class="ctrl-group">
-
-      <span class="ctrl-label">Speed</span>
-
-      <span class="chip" onclick="setSpeed(0.5,this)">0.5×</span>
-
-      <span class="chip" onclick="setSpeed(0.75,this)">0.75×</span>
-
-      <span class="chip active" onclick="setSpeed(1,this)">1×</span>
-
-      <span class="chip" onclick="setSpeed(1.25,this)">1.25×</span>
-
-      <span class="chip" onclick="setSpeed(1.5,this)">1.5×</span>
-
-      <span class="chip" onclick="setSpeed(2,this)">2×</span>
-
-    </div>
-
-    <div class="sep"></div>
-
-    <div class="ctrl-group">
-
-      <span class="ctrl-label">Loop</span>
-
-      <span class="chip" id="chipLoop" onclick="toggleLoop(this)">Off</span>
-
-    </div>
-
-    <div class="sep" id="resyncSep" style="display:none"></div>
-
-    <div class="ctrl-group" id="resyncGroup" style="display:none">
-
-      <span class="chip" onclick="forceResync()">⟲ Resync audio</span>
-
-    </div>
-
-    <div class="sep"></div>
-
-    <div class="ctrl-group">
-
-      <span class="ctrl-label">PiP</span>
-
-      <span class="chip" onclick="togglePip()">Enter PiP</span>
-
-    </div>
-
-  </div>
-
-</div>
-
-
-
-<div class="diag" id="diagBox"></div>
-
-
-
-<div class="tips" id="tips">
-
-  <div class="tip"><div class="tip-icon">🎬</div><div class="tip-text"><strong>Mux mode</strong>Paste a silent video URL and its matching audio URL — the player locks them together and auto-fixes drift every 400ms.</div></div>
-
-  <div class="tip"><div class="tip-icon">🔗</div><div class="tip-text"><strong>Embed mode</strong>Switch to the Embed tab and paste a YouTube, Vimeo, or any iframe URL — it loads inside a sandboxed iframe.</div></div>
-
-  <div class="tip"><div class="tip-icon">⌨️</div><div class="tip-text"><strong>Keyboard (mux mode)</strong>Space = play/pause · ←/→ seek · ↑/↓ volume · M mute · F fullscreen.</div></div>
-
-</div>
-
-
-
-<script>
-
-const video=document.getElementById("video"),audio=document.getElementById("audio");
-
-const playerWrap=document.getElementById("playerWrap"),ctrlBar=document.getElementById("controlsBar");
-
-const tips=document.getElementById("tips"),playOverlay=document.getElementById("playOverlay");
-
-const bufferOver=document.getElementById("bufferOverlay"),statusDot=document.getElementById("statusDot");
-
-const statusTxt=document.getElementById("statusText"),diagBox=document.getElementById("diagBox");
-
-const syncBadge=document.getElementById("syncBadge"),driftEl=document.getElementById("driftEl");
-
-const videoShell=document.getElementById("videoShell"),embedShell=document.getElementById("embedShell");
-
-const playBtn=document.getElementById("playBtn"),infoBanner=document.getElementById("infoBanner");
-
-
-
-let mode="mux",hasMux=false,driftInterval=null;
-
-const DRIFT=0.12;
-
-
-
-function switchTab(m){
-
-  mode=m;
-
-  document.getElementById("tab-mux").classList.toggle("active",m==="mux");
-
-  document.getElementById("tab-embed").classList.toggle("active",m==="embed");
-
-  document.getElementById("panel-mux").classList.toggle("active",m==="mux");
-
-  document.getElementById("panel-embed").classList.toggle("active",m==="embed");
-
-  clearAll();
-
-}
-
-
-
-function setStatus(msg,state){statusTxt.textContent=msg;statusDot.className="status-dot"+(state?" "+state:"")}
-
-function showDiag(h){diagBox.innerHTML=h;diagBox.classList.add("on")}
-
-function hideDiag(){diagBox.classList.remove("on");diagBox.innerHTML=""}
-
-function showInfo(h){infoBanner.innerHTML=h;infoBanner.classList.add("on")}
-
-function hideInfo(){infoBanner.classList.remove("on")}
-
-function showBuf(on){bufferOver.classList.toggle("on",on)}
-
-
-
-function normalizeEmbed(raw){
-
-  let m=raw.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-
-  if(m) return"https://www.youtube.com/embed/"+m[1]+"?autoplay=1";
-
-  m=raw.match(/vimeo\.com\/(\d+)/);
-
-  if(m) return"https://player.vimeo.com/video/"+m[1]+"?autoplay=1";
-
-  return raw;
-
-}
-
-
-
-function loadEl(el,url){
-
-  return new Promise((res,rej)=>{
-
-    const onE=()=>{el.removeEventListener("loadedmetadata",onM);rej()};
-
-    const onM=()=>{el.removeEventListener("error",onE);res()};
-
-    el.addEventListener("loadedmetadata",onM,{once:true});
-
-    el.addEventListener("error",onE,{once:true});
-
-    el.src=url;el.load();
-
-  });
-
-}
-
-
-
-async function startPlayer(){
-
-  hideDiag();hideInfo();
-
-  playBtn.disabled=true;
-
-
-
-  if(mode==="embed"){
-
-    const url=document.getElementById("embedUrl").value.trim();
-
-    if(!url){setStatus("Paste an embed URL first.","error");playBtn.disabled=false;return}
-
-    doEmbed(url);
-
-    playBtn.disabled=false;
-
-    return;
-
-  }
-
-
-
-  // mux mode
-
-  const vUrl=document.getElementById("videoUrl").value.trim();
-
-  const aUrl=document.getElementById("audioUrl").value.trim();
-
-  if(!vUrl){setStatus("Video URL is required.","error");playBtn.disabled=false;return}
-
-  if(location.protocol==="https:"&&(vUrl.startsWith("http://")||(aUrl&&aUrl.startsWith("http://")))){
-
-    showDiag("<strong>Blocked: mixed content.</strong> Use <code>https://</code> URLs.");
-
-    setStatus("Blocked (mixed content).","error");playBtn.disabled=false;return;
-
-  }
-
-  destroyAll(true);
-
-  playerWrap.classList.add("on");
-
-  videoShell.classList.add("on");
-
-  embedShell.classList.remove("on");
-
-  tips.style.display="none";
-
-  setStatus("Loading…","loading");showBuf(true);
-
-  await doMux(vUrl,aUrl);
-
-  playBtn.disabled=false;
-
-}
-
-
-
-async function doMux(vUrl,aUrl){
-
-  hasMux=!!aUrl;
-
-  try{
-
-    const loads=[loadEl(video,vUrl)];
-
-    if(hasMux) loads.push(loadEl(audio,aUrl));
-
-    await Promise.all(loads);
-
-    video.muted=hasMux;
-
-    if(hasMux){
-
-      syncBadge.classList.add("on");
-
-      document.getElementById("volGroup").style.display="flex";
-
-      document.getElementById("volSep").style.display="block";
-
-      document.getElementById("resyncGroup").style.display="flex";
-
-      document.getElementById("resyncSep").style.display="block";
-
-      setStatus("Ready — video + audio muxed.","ok");
-
-      attachSync();
-
-    } else {
-
-      setStatus("Ready — "+(vUrl.split("/").pop()||"video")+".","ok");
-
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Anime Stream Player</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0f0f0f;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
     }
 
-    showBuf(false);
+    h1 {
+      font-size: 1.3rem;
+      color: #c084fc;
+      margin-bottom: 16px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
 
-    ctrlBar.classList.add("on");
+    .source-tag {
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 20px;
+      word-break: break-all;
+      text-align: center;
+    }
 
-    attachVideoEvents();
+    .player-wrap {
+      width: 100%;
+      max-width: 960px;
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(192,132,252,0.15);
+    }
 
-    attemptPlay();
+    iframe {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      display: block;
+      background: #000;
+      border: 0;
+    }
 
-  } catch{
+    .controls {
+      width: 100%;
+      max-width: 960px;
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
 
-    showBuf(false);
+    .control-box {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 14px 18px;
+      flex: 1;
+      min-width: 200px;
+    }
 
-    setStatus("Failed to load. Check the URLs.","error");
+    .control-box h3 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 10px;
+    }
 
-    showDiag("<strong>Media could not be loaded.</strong> Common causes:<ul><li>Server blocks cross-origin (CORS) requests.</li><li>URL needs auth or file is offline.</li><li>Format not supported by your browser.</li><li>Mixed content: <code>http://</code> on an <code>https://</code> page.</li></ul>");
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
 
-  }
+    button {
+      background: #2a2a2a;
+      color: #ccc;
+      border: 1px solid #3a3a3a;
+      border-radius: 6px;
+      padding: 7px 14px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
 
+    button:hover { background: #3a3a3a; color: #fff; }
+
+    button.active {
+      background: #7c3aed;
+      border-color: #c084fc;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .status-bar {
+      width: 100%;
+      max-width: 960px;
+      margin-top: 12px;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    .status-bar span { color: #c084fc; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <h1>🎌 Anime Stream Player</h1>
+  <div class="source-tag">Source: https://anizone.to/anime/spjuxray/3</div>
+
+  <div class="player-wrap">
+    <!-- Both the video and matching audio URLs are loaded inside this iframe. -->
+    <iframe id="mediaFrame" title="Anime media player" allow="autoplay; fullscreen"></iframe>
+  </div>
+
+  <div class="controls">
+
+    <div class="control-box">
+      <h3>🎬 Video Quality</h3>
+      <div class="btn-group" id="qualityBtns"></div>
+    </div>
+
+    <div class="control-box">
+      <h3>🔊 Audio Language</h3>
+      <div class="btn-group" id="audioBtns"></div>
+    </div>
+
+  </div>
+
+  <div class="status-bar" id="statusBar">
+    Status: <span>Initializing...</span>
+  </div>
+
+<script>
+const STREAMS = {
+  "videos": [
+    {
+      "label": "480x360 / 946kbps",
+      "url": "https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/video/360/playlist.m3u8"
+    },
+    {
+      "label": "960x720 / 2376kbps",
+      "url": "https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/video/720/playlist.m3u8"
+    },
+    {
+      "label": "1440x1080 / 3476kbps",
+      "url": "https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/video/1080/playlist.m3u8"
+    }
+  ],
+  "audio": [
+    {
+      "name": "Japanese",
+      "lang": "ja",
+      "url": "https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/audio/0_ja/playlist.m3u8"
+    },
+    {
+      "name": "English",
+      "lang": "en",
+      "url": "https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/audio/1_en/playlist.m3u8"
+    }
+  ]
+};
+
+const statusBar = document.getElementById("statusBar");
+const mediaFrame = document.getElementById("mediaFrame");
+
+// ── Current selections ────────────────────────────────────────────
+let currentVideoUrl = STREAMS.videos.length > 0 ? STREAMS.videos[STREAMS.videos.length - 1].url : null;
+let currentAudioUrl = null;
+
+// Pick default audio: prefer English, else first track
+const defaultAudio = STREAMS.audio.find(a => ["en","eng"].includes(a.lang.toLowerCase()))
+                  || STREAMS.audio[0]
+                  || null;
+if (defaultAudio) currentAudioUrl = defaultAudio.url;
+
+function setStatus(msg) {
+  statusBar.innerHTML = "Status: <span>" + msg + "</span>";
 }
 
-
-
-function doEmbed(raw){
-
-  destroyAll(true);
-
-  playerWrap.classList.add("on");
-
-  videoShell.classList.remove("on");
-
-  embedShell.classList.add("on");
-
-  tips.style.display="none";
-
-  ctrlBar.classList.remove("on");
-
-  const src=normalizeEmbed(raw);
-
-  const iframe=document.createElement("iframe");
-
-  iframe.src=src;iframe.allowFullscreen=true;
-
-  iframe.allow="autoplay; fullscreen; picture-in-picture; encrypted-media";
-
-  embedShell.innerHTML="";embedShell.appendChild(iframe);
-
-  setStatus("Embed loaded — "+src.split("/")[2],"ok");
-
+function sendToPlayer(type, payload = {}) {
+  mediaFrame.contentWindow.postMessage({ type, ...payload }, "*");
 }
 
-
-
-function attachVideoEvents(){
-
-  video.addEventListener("waiting",()=>showBuf(true),{passive:true});
-
-  video.addEventListener("playing",()=>showBuf(false),{passive:true});
-
-  video.addEventListener("stalled",()=>showBuf(true),{passive:true});
-
-  video.addEventListener("canplay",()=>showBuf(false),{passive:true});
-
+// ── Build quality buttons ─────────────────────────────────────────
+function buildQualityButtons() {
+  const wrap = document.getElementById("qualityBtns");
+  STREAMS.videos.forEach((v, idx) => {
+    const btn = document.createElement("button");
+    btn.textContent = v.label;
+    if (v.url === currentVideoUrl) btn.classList.add("active");
+    btn.onclick = () => {
+      currentVideoUrl = v.url;
+      document.querySelectorAll("#qualityBtns button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      sendToPlayer("set-video", { url: v.url });
+    };
+    wrap.appendChild(btn);
+  });
 }
 
+// ── Build audio buttons ───────────────────────────────────────────
+function buildAudioButtons() {
+  const wrap = document.getElementById("audioBtns");
 
+  // "Auto (Master)" button — uses the original master with Japanese default
+  // We skip this to keep it simple: just show extracted audio tracks
 
-function attachSync(){
-
-  video.addEventListener("play",()=>{audio.currentTime=video.currentTime;audio.play().catch(()=>{})});
-
-  video.addEventListener("pause",()=>audio.pause());
-
-  video.addEventListener("seeking",()=>{audio.currentTime=video.currentTime});
-
-  video.addEventListener("ratechange",()=>{audio.playbackRate=video.playbackRate});
-
-  if(driftInterval) clearInterval(driftInterval);
-
-  driftInterval=setInterval(()=>{
-
-    if(video.paused||audio.paused) return;
-
-    const d=video.currentTime-audio.currentTime;
-
-    driftEl.textContent="drift "+(d>=0?"+":"")+d.toFixed(2)+"s";
-
-    driftEl.classList.toggle("warn",Math.abs(d)>DRIFT);
-
-    if(Math.abs(d)>DRIFT) audio.currentTime=video.currentTime;
-
-  },400);
-
+  STREAMS.audio.forEach(a => {
+    const btn = document.createElement("button");
+    const isEn = ["en","eng"].includes(a.lang.toLowerCase());
+    btn.textContent = (isEn ? "🇬🇧 " : "🇯🇵 ") + a.name;
+    if (a.url === currentAudioUrl) btn.classList.add("active");
+    btn.onclick = () => {
+      currentAudioUrl = a.url;
+      document.querySelectorAll("#audioBtns button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      sendToPlayer("set-audio", { url: a.url, name: a.name });
+    };
+    wrap.appendChild(btn);
+  });
 }
 
-
-
-function forceResync(){if(!hasMux)return;audio.currentTime=video.currentTime;if(!video.paused)audio.play().catch(()=>{});showInfo("🔁 Audio resynced.")}
-
-function attemptPlay(){const p=video.play();if(p&&p.catch){p.then(()=>playOverlay.classList.remove("on")).catch(()=>playOverlay.classList.add("on"))}}
-
-function manualPlay(){playOverlay.classList.remove("on");video.play().catch(()=>{});if(hasMux)audio.play().catch(()=>{})}
-
-function setSpeed(r,chip){video.playbackRate=r;if(hasMux)audio.playbackRate=r;chip.parentElement.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));chip.classList.add("active")}
-
-function toggleLoop(chip){video.loop=!video.loop;if(hasMux)audio.loop=video.loop;chip.textContent=video.loop?"On":"Off";chip.classList.toggle("active",video.loop)}
-
-async function togglePip(){try{document.pictureInPictureElement?await document.exitPictureInPicture():await video.requestPictureInPicture()}catch{showInfo("PiP not supported in this browser.")}}
-
-
-
-function destroyAll(keep){
-
-  if(driftInterval){clearInterval(driftInterval);driftInterval=null}
-
-  video.pause();audio.pause();
-
-  while(video.firstChild)video.removeChild(video.firstChild);
-
-  video.removeAttribute("src");video.load();
-
-  audio.removeAttribute("src");audio.load();
-
-  embedShell.innerHTML="";
-
-  playOverlay.classList.remove("on");bufferOver.classList.remove("on");
-
-  syncBadge.classList.remove("on");driftEl.textContent="";
-
-  document.getElementById("volGroup").style.display="none";
-
-  document.getElementById("volSep").style.display="none";
-
-  document.getElementById("resyncGroup").style.display="none";
-
-  document.getElementById("resyncSep").style.display="none";
-
-  hasMux=false;
-
-  if(!keep){playerWrap.classList.remove("on");ctrlBar.classList.remove("on")}
-
-}
-
-
-
-function clearAll(){
-
-  destroyAll(false);hideDiag();hideInfo();
-
-  tips.style.display="grid";
-
-  ["videoUrl","audioUrl","embedUrl"].forEach(id=>{const e=document.getElementById(id);if(e)e.value=""});
-
-  setStatus("Choose a mode above, fill in the URL(s), then press Load & Play.");
-
-}
-
-
-
-document.addEventListener("keydown",e=>{
-
-  if(e.target.tagName==="INPUT"){if(e.key==="Enter"){e.preventDefault();startPlayer()}return}
-
-  if(!playerWrap.classList.contains("on")||!videoShell.classList.contains("on")) return;
-
-  if(e.key===" "){e.preventDefault();if(video.paused){video.play();if(hasMux)audio.play().catch(()=>{})}else{video.pause();if(hasMux)audio.pause()}}
-
-  if(e.key==="ArrowLeft"){e.preventDefault();video.currentTime=Math.max(0,video.currentTime-5);if(hasMux)audio.currentTime=video.currentTime}
-
-  if(e.key==="ArrowRight"){e.preventDefault();video.currentTime+=5;if(hasMux)audio.currentTime=video.currentTime}
-
-  if(e.key==="ArrowUp"){e.preventDefault();if(hasMux)audio.volume=Math.min(1,audio.volume+0.1);else video.volume=Math.min(1,video.volume+0.1)}
-
-  if(e.key==="ArrowDown"){e.preventDefault();if(hasMux)audio.volume=Math.max(0,audio.volume-0.1);else video.volume=Math.max(0,video.volume-0.1)}
-
-  if(e.key==="m"||e.key==="M"){if(hasMux)audio.muted=!audio.muted;else video.muted=!video.muted}
-
-  if(e.key==="f"||e.key==="F"){video.requestFullscreen&&video.requestFullscreen()}
-
+// ── Init ──────────────────────────────────────────────────────────
+window.addEventListener("message", event => {
+  if (event.source !== mediaFrame.contentWindow || !event.data || event.data.type !== "player-status") return;
+  setStatus(event.data.message);
 });
 
+mediaFrame.srcdoc = `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"><\/script>
+<style>html,body{margin:0;background:#000;height:100%;overflow:hidden}video{width:100%;height:100%;display:block;background:#000}</style>
+</head><body><video id="video" controls playsinline crossorigin="anonymous"></video><audio id="audio" preload="auto" crossorigin="anonymous"></audio>
+<script>
+const video = document.getElementById('video'), audio = document.getElementById('audio');
+let videoHls, audioHls, videoUrl = ${JSON.stringify(currentVideoUrl)}, audioUrl = ${JSON.stringify(currentAudioUrl)}, audioName = ${JSON.stringify(defaultAudio ? defaultAudio.name : "")};
+let syncing = false, resumeAfterLoad = false;
+const report = message => parent.postMessage({type:'player-status', message}, '*');
+const destroy = instance => { if (instance) instance.destroy(); };
+function loadHls(media, url, kind) {
+  if (Hls.isSupported()) {
+    const hls = new Hls({enableWorker:true, lowLatencyMode:false, backBufferLength:30, maxBufferLength:20});
+    hls.loadSource(url); hls.attachMedia(media);
+    hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) report(kind + ' error: ' + data.type); });
+    return hls;
+  }
+  if (media.canPlayType('application/vnd.apple.mpegurl')) { media.src = url; return null; }
+  report('This browser cannot play HLS streams.'); return null;
+}
+function align(hard = false) {
+  if (syncing || !Number.isFinite(video.currentTime) || !Number.isFinite(audio.currentTime)) return;
+  const drift = audio.currentTime - video.currentTime;
+  if (hard || Math.abs(drift) > .35) { syncing = true; audio.currentTime = video.currentTime; audio.playbackRate = video.playbackRate; syncing = false; }
+  else if (Math.abs(drift) > .08) audio.playbackRate = Math.max(.9, Math.min(1.1, video.playbackRate - drift * .25));
+  else audio.playbackRate = video.playbackRate;
+}
+async function playTogether() {
+  align(true);
+  try { await audio.play(); await video.play(); } catch (_) { report('Press play to start both streams.'); }
+}
+function loadAudio(keepTime = 0, shouldPlay = false) {
+  destroy(audioHls); audioHls = undefined; audio.pause();
+  if (!audioUrl) return;
+  audioHls = loadHls(audio, audioUrl, 'Audio');
+  audio.addEventListener('canplay', () => { audio.currentTime = keepTime; align(true); if (shouldPlay) playTogether(); report('Ready — ' + (audioName || 'selected') + ' audio'); }, {once:true});
+}
+function loadVideo(keepTime = 0, shouldPlay = false) {
+  destroy(videoHls); videoHls = undefined; video.pause();
+  video.muted = true; // video rendition stays silent; the paired audio element is the only audio output.
+  videoHls = loadHls(video, videoUrl, 'Video');
+  video.addEventListener('canplay', () => { video.currentTime = keepTime; loadAudio(keepTime, shouldPlay); }, {once:true});
+}
+video.addEventListener('play', () => { if (audio.paused) { audio.currentTime = video.currentTime; audio.play().catch(() => report('Press play to enable audio.')); } });
+video.addEventListener('pause', () => { if (!video.seeking) audio.pause(); });
+video.addEventListener('seeking', () => { audio.currentTime = video.currentTime; });
+video.addEventListener('seeked', () => align(true));
+video.addEventListener('timeupdate', () => align());
+video.addEventListener('ratechange', () => { audio.playbackRate = video.playbackRate; });
+video.addEventListener('volumechange', () => { audio.volume = video.volume; audio.muted = video.muted; });
+audio.addEventListener('ended', () => video.pause());
+window.addEventListener('message', event => {
+  const msg = event.data || {}, time = video.currentTime || 0, playing = !video.paused;
+  if (msg.type === 'set-video' && msg.url) { videoUrl = msg.url; report('Switching video quality…'); loadVideo(time, playing); }
+  if (msg.type === 'set-audio' && msg.url) { audioUrl = msg.url; audioName = msg.name || 'selected'; report('Switching audio…'); loadAudio(time, playing); }
+});
+loadVideo();
+<\/script></body></html>`;
+
+buildQualityButtons();
+buildAudioButtons();
+if (!currentVideoUrl) setStatus("No video streams found.");
 </script>
 
 </body>
-
 </html>
