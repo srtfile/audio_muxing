@@ -5,395 +5,141 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>AV Sync Player</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0d;--surface:#111116;--surface2:#18181f;--surface3:#1f1f28;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#ededf2;--muted:#7a7a95;
+  --accent:#e05c2a;--accent-dim:rgba(224,92,42,0.14);--accent2:#f07040;
+  --green:#22c55e;--red:#ef4444;--amber:#f59e0b;--radius:8px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px 16px 56px;gap:18px}
+header{width:100%;max-width:880px;display:flex;align-items:center;gap:14px}
+.logo{width:40px;height:40px;background:linear-gradient(135deg,var(--accent),#c0392b);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(224,92,42,0.35)}
+.logo svg{width:22px;height:22px;fill:#fff}
+.header-text h1{font-size:17px;font-weight:700;letter-spacing:-0.3px}
+.header-text p{font-size:12px;color:var(--muted);margin-top:2px}
 
-  :root {
-    --bg: #0a0a0d;
-    --surface: #111116;
-    --surface2: #18181f;
-    --surface3: #1f1f28;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.13);
-    --text: #ededf2;
-    --muted: #7a7a95;
-    --accent: #e05c2a;
-    --accent-dim: rgba(224,92,42,0.14);
-    --accent2: #f07040;
-    --green: #22c55e;
-    --red: #ef4444;
-    --amber: #f59e0b;
-    --radius: 8px;
-  }
+/* tabs */
+.mode-tabs{width:100%;max-width:880px;display:flex;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px}
+.tab{flex:1;text-align:center;padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:all 0.15s;user-select:none;display:flex;align-items:center;justify-content:center;gap:6px}
+.tab:hover{color:var(--text);background:var(--surface2)}
+.tab.active{background:var(--accent-dim);color:var(--accent2);border:1px solid rgba(224,92,42,0.3)}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 28px 16px 56px;
-    gap: 18px;
-  }
+/* card */
+.inputs-card{width:100%;max-width:880px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.panel{display:none;flex-direction:column;gap:14px}
+.panel.active{display:flex}
+.input-row{display:flex;flex-direction:column;gap:6px}
+.input-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-v{background:var(--accent2)}.dot-a{background:#60a5fa}.dot-e{background:#a78bfa}
+input[type=text]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;font-family:'Consolas','Courier New',monospace;padding:10px 14px;outline:none;transition:border-color 0.15s}
+input[type=text]:focus{border-color:var(--accent)}
+input[type=text]::placeholder{color:var(--muted)}
+.hint{font-size:11.5px;color:var(--muted);line-height:1.5}
+.hint code{background:var(--surface3);padding:1px 5px;border-radius:4px;font-family:'Consolas',monospace;font-size:11px;color:var(--accent2)}
+.btn-row{display:flex;gap:10px;margin-top:2px}
+button{cursor:pointer;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;padding:10px 20px;transition:opacity 0.15s,transform 0.1s;font-family:inherit}
+button:active{transform:scale(0.97)}
+.btn-play{background:linear-gradient(135deg,var(--accent),#c0392b);color:#fff;flex:1;box-shadow:0 3px 12px rgba(224,92,42,0.3)}
+.btn-play:hover{opacity:0.88}
+.btn-play:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none}
+.btn-clear{background:var(--surface3);color:var(--muted);border:1px solid var(--border)}
+.btn-clear:hover{color:var(--text);border-color:var(--border2)}
 
-  /* ── Header ── */
-  header {
-    width: 100%;
-    max-width: 880px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-  .logo {
-    width: 40px; height: 40px;
-    background: linear-gradient(135deg, var(--accent), #c0392b);
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    box-shadow: 0 4px 16px rgba(224,92,42,0.35);
-  }
-  .logo svg { width: 22px; height: 22px; fill: #fff; }
-  .header-text h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
-  .header-text p  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+/* status */
+.status-bar{width:100%;max-width:880px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);min-height:20px;flex-wrap:wrap}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background 0.2s}
+.status-dot.ok{background:var(--green)}.status-dot.error{background:var(--red)}.status-dot.loading{background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.badge{display:none;align-items:center;gap:4px;border-radius:20px;padding:2px 8px;font-size:10.5px;font-weight:600}
+.badge.on{display:inline-flex}
+.badge-sync{background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.3);color:#60a5fa}
+.drift-readout{font-size:11px;color:var(--muted);font-family:'Consolas',monospace}
+.drift-readout.warn{color:var(--amber)}
 
-  /* ── Mode Tabs ── */
-  .mode-tabs {
-    width: 100%;
-    max-width: 880px;
-    display: flex;
-    gap: 6px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 8px;
-  }
-  .tab {
-    flex: 1;
-    text-align: center;
-    padding: 9px 14px;
-    border-radius: 8px;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.15s;
-    user-select: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-  .tab:hover { color: var(--text); background: var(--surface2); }
-  .tab.active {
-    background: var(--accent-dim);
-    color: var(--accent2);
-    border: 1px solid rgba(224,92,42,0.3);
-  }
-  .tab-icon { font-size: 14px; }
+/* player */
+.player-wrap{width:100%;max-width:880px;background:#000;border-radius:14px;overflow:hidden;border:1px solid var(--border);display:none;position:relative}
+.player-wrap.on{display:block}
+.embed-shell{position:relative;padding-bottom:56.25%;height:0;background:#000;display:none}
+.embed-shell.on{display:block}
+.embed-shell iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
+.video-shell{position:relative;background:#000;display:none}
+.video-shell.on{display:block}
+video{width:100%;display:block;max-height:540px;background:#000}
+.overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);flex-direction:column;gap:10px;z-index:5}
+.overlay.on{display:flex}
+.overlay-btn{background:linear-gradient(135deg,var(--accent),#c0392b);color:#fff;padding:12px 28px;border-radius:30px;font-size:14px;display:flex;align-items:center;gap:8px;cursor:pointer;border:none;font-family:inherit;font-weight:600;box-shadow:0 4px 16px rgba(224,92,42,0.4)}
+.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-  /* ── Inputs Card ── */
-  .inputs-card {
-    width: 100%;
-    max-width: 880px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
+/* controls */
+.controls-bar{background:var(--surface);border-top:1px solid var(--border);padding:12px 16px;display:none;flex-wrap:wrap;gap:10px;align-items:center}
+.controls-bar.on{display:flex}
+.ctrl-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ctrl-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted)}
+.chip{background:var(--surface3);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:12px;font-weight:500;padding:4px 12px;cursor:pointer;transition:all 0.12s}
+.chip:hover{border-color:var(--border2);color:var(--text)}
+.chip.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent2);font-weight:600}
+.sep{width:1px;height:18px;background:var(--border2);margin:0 2px}
 
-  .input-row {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
+/* diag */
+.diag{width:100%;max-width:880px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:14px 16px;font-size:12.5px;line-height:1.6;color:var(--text);display:none}
+.diag.on{display:block}
+.diag strong{color:var(--red)}
+.diag code{background:var(--surface3);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:11.5px}
+.diag ul{margin:6px 0 0 18px}
+.diag li{margin-bottom:3px}
+.info{width:100%;max-width:880px;background:rgba(224,92,42,0.07);border:1px solid rgba(224,92,42,0.25);border-radius:10px;padding:12px 16px;font-size:12px;line-height:1.6;color:var(--muted);display:none}
+.info.on{display:block}
 
-  .input-label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.9px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .input-label .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .dot-video { background: var(--accent2); }
-  .dot-audio { background: #60a5fa; }
-  .dot-sub   { background: #a78bfa; }
-
-  input[type="text"], textarea {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--text);
-    font-size: 13px;
-    font-family: 'Consolas', 'Courier New', monospace;
-    padding: 10px 14px;
-    outline: none;
-    transition: border-color 0.15s;
-    resize: none;
-  }
-  input[type="text"]:focus,
-  textarea:focus { border-color: var(--accent); }
-  input[type="text"]::placeholder,
-  textarea::placeholder { color: var(--muted); }
-
-  .hint { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
-  .hint code {
-    background: var(--surface3);
-    padding: 1px 5px;
-    border-radius: 4px;
-    font-family: 'Consolas', monospace;
-    font-size: 11px;
-    color: var(--accent2);
-  }
-
-  /* ── Buttons ── */
-  .btn-row { display: flex; gap: 10px; margin-top: 2px; }
-  button { cursor: pointer; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 600; padding: 10px 20px; transition: opacity 0.15s, transform 0.1s; font-family: inherit; }
-  button:active { transform: scale(0.97); }
-  .btn-play { background: linear-gradient(135deg, var(--accent), #c0392b); color: #fff; flex: 1; box-shadow: 0 3px 12px rgba(224,92,42,0.3); }
-  .btn-play:hover { opacity: 0.88; }
-  .btn-play:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
-  .btn-clear { background: var(--surface3); color: var(--muted); border: 1px solid var(--border); }
-  .btn-clear:hover { color: var(--text); border-color: var(--border2); }
-
-  /* ── Status Bar ── */
-  .status-bar {
-    width: 100%; max-width: 880px;
-    display: flex; align-items: center; gap: 8px;
-    font-size: 12px; color: var(--muted); min-height: 20px; flex-wrap: wrap;
-  }
-  .status-dot {
-    width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background 0.2s;
-  }
-  .status-dot.ok      { background: var(--green); }
-  .status-dot.error   { background: var(--red); }
-  .status-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  .stream-type-badge {
-    display: none; align-items: center; gap: 4px;
-    background: rgba(34,197,94,0.1);
-    border: 1px solid rgba(34,197,94,0.3);
-    border-radius: 20px; padding: 2px 8px;
-    font-size: 10.5px; color: var(--green); font-weight: 600;
-  }
-  .stream-type-badge.visible { display: inline-flex; }
-
-  .sync-badge {
-    display: none; align-items: center; gap: 4px;
-    background: rgba(96,165,250,0.1);
-    border: 1px solid rgba(96,165,250,0.3);
-    border-radius: 20px; padding: 2px 8px;
-    font-size: 10.5px; color: #60a5fa; font-weight: 600;
-  }
-  .sync-badge.visible { display: inline-flex; }
-
-  /* ── Player ── */
-  .player-wrap {
-    width: 100%; max-width: 880px;
-    background: #000; border-radius: 14px;
-    overflow: hidden; border: 1px solid var(--border);
-    display: none; position: relative;
-  }
-  .player-wrap.visible { display: block; }
-
-  /* Embed mode */
-  .embed-shell { position: relative; padding-bottom: 56.25%; height: 0; background: #000; }
-  .embed-shell iframe {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    border: none;
-  }
-
-  .video-shell { position: relative; background: #000; }
-  video { width: 100%; display: block; max-height: 540px; background: #000; }
-
-  .overlay {
-    position: absolute; inset: 0;
-    display: none; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.5); flex-direction: column; gap: 10px; z-index: 5;
-  }
-  .overlay.visible { display: flex; }
-  .overlay-btn {
-    background: linear-gradient(135deg, var(--accent), #c0392b);
-    color: #fff; padding: 12px 28px; border-radius: 30px;
-    font-size: 14px; display: flex; align-items: center; gap: 8px;
-    cursor: pointer; border: none; font-family: inherit; font-weight: 600;
-    box-shadow: 0 4px 16px rgba(224,92,42,0.4);
-  }
-  .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid rgba(255,255,255,0.2);
-    border-top-color: var(--accent);
-    border-radius: 50%; animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── Controls ── */
-  .controls-bar {
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    padding: 12px 16px;
-    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-  }
-  .ctrl-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .ctrl-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); }
-  .chip {
-    background: var(--surface3); border: 1px solid var(--border); border-radius: 20px;
-    color: var(--muted); font-size: 12px; font-weight: 500; padding: 4px 12px;
-    cursor: pointer; transition: all 0.12s;
-  }
-  .chip:hover { border-color: var(--border2); color: var(--text); }
-  .chip.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); font-weight: 600; }
-  .separator { width: 1px; height: 18px; background: var(--border2); margin: 0 2px; }
-
-  /* ── Diag / Info ── */
-  .diag {
-    width: 100%; max-width: 880px;
-    background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.3);
-    border-radius: 10px; padding: 14px 16px; font-size: 12.5px; line-height: 1.6;
-    color: var(--text); display: none;
-  }
-  .diag.visible { display: block; }
-  .diag strong { color: var(--red); }
-  .diag code { background: var(--surface3); padding: 1px 5px; border-radius: 4px; font-family: monospace; font-size: 11.5px; }
-  .diag ul { margin: 6px 0 0 18px; }
-  .diag li { margin-bottom: 3px; }
-
-  .info-banner {
-    width: 100%; max-width: 880px;
-    background: rgba(224,92,42,0.07); border: 1px solid rgba(224,92,42,0.25);
-    border-radius: 10px; padding: 12px 16px; font-size: 12px; line-height: 1.6;
-    color: var(--muted); display: none;
-  }
-  .info-banner.visible { display: block; }
-  .info-banner strong { color: var(--accent2); }
-
-  /* ── Tips ── */
-  .tips {
-    width: 100%; max-width: 880px;
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px;
-  }
-  .tip {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start;
-  }
-  .tip-icon { font-size: 18px; line-height: 1; flex-shrink: 0; margin-top: 1px; }
-  .tip-text { font-size: 12px; color: var(--muted); line-height: 1.5; }
-  .tip-text strong { color: var(--text); display: block; margin-bottom: 2px; font-size: 12px; }
-
-  /* ── Hidden panels ── */
-  .panel { display: none; flex-direction: column; gap: 14px; }
-  .panel.active { display: flex; }
-
-  /* Format badge row */
-  .format-chips {
-    display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px;
-  }
-  .fmt-chip {
-    display: inline-flex; align-items: center; gap: 4px;
-    background: var(--surface3); border: 1px solid var(--border);
-    border-radius: 6px; padding: 3px 8px;
-    font-size: 11px; font-weight: 600; color: var(--muted);
-  }
-  .fmt-chip.supported { border-color: rgba(34,197,94,0.4); color: var(--green); background: rgba(34,197,94,0.07); }
-  .fmt-chip.unsupported { border-color: rgba(239,68,68,0.4); color: var(--red); opacity: 0.7; }
-
-  /* Drift readout */
-  .drift-readout {
-    font-size: 11px; color: var(--muted); font-family: 'Consolas', monospace;
-  }
-  .drift-readout.warn { color: var(--amber); }
+/* tips */
+.tips{width:100%;max-width:880px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.tip{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start}
+.tip-icon{font-size:18px;line-height:1;flex-shrink:0;margin-top:1px}
+.tip-text{font-size:12px;color:var(--muted);line-height:1.5}
+.tip-text strong{color:var(--text);display:block;margin-bottom:2px;font-size:12px}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">
-    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-  </div>
+  <div class="logo"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
   <div class="header-text">
     <h1>AV Sync Player</h1>
-    <p>Plays a direct video file, optionally muxed live with a separate audio track — plus plain iframe embeds</p>
+    <p>Pick a mode: mux video + audio files, or load an embed/iframe URL</p>
   </div>
 </header>
 
-<!-- Mode Tabs -->
-<div class="mode-tabs" id="modeTabs">
-  <div class="tab active" data-mode="direct" onclick="switchMode('direct')">
-    <span class="tab-icon">🎬</span> Video + Audio
-  </div>
-  <div class="tab" data-mode="embed" onclick="switchMode('embed')">
-    <span class="tab-icon">🔗</span> Embed / iFrame
-  </div>
+<!-- TABS -->
+<div class="mode-tabs">
+  <div class="tab active" id="tab-mux" onclick="switchTab('mux')">🎬 Video + Audio mux</div>
+  <div class="tab" id="tab-embed" onclick="switchTab('embed')">🔗 Embed / iFrame</div>
 </div>
 
 <div class="inputs-card">
 
-  <!-- ── DIRECT MODE ── -->
-  <div class="panel active" id="panel-direct">
+  <!-- MUX PANEL -->
+  <div class="panel active" id="panel-mux">
     <div class="input-row">
-      <label class="input-label" for="videoUrl">
-        <span class="dot dot-video"></span> Video URL (picture track)
-      </label>
+      <label class="input-label" for="videoUrl"><span class="dot dot-v"></span> Video URL (picture track)</label>
       <input type="text" id="videoUrl" placeholder="https://example.com/video.mp4" spellcheck="false"/>
-      <span class="hint">
-        Direct <code>.mp4</code>, <code>.webm</code>, <code>.mov</code> file. If it already has sound, leave the audio field below empty.
-      </span>
+      <span class="hint">Direct <code>.mp4</code> / <code>.webm</code> / <code>.mov</code> file. Should be silent, or its own audio will be muted.</span>
     </div>
-
     <div class="input-row">
-      <label class="input-label" for="audioUrl">
-        <span class="dot dot-audio"></span> Audio URL — optional, for muxing a separate soundtrack
-      </label>
+      <label class="input-label" for="audioUrl"><span class="dot dot-a"></span> Audio URL (sound track)</label>
       <input type="text" id="audioUrl" placeholder="https://example.com/audio.mp3" spellcheck="false"/>
-      <span class="hint">
-        Use this when the video file above is <strong>silent</strong> and the audio lives in its own file (<code>.mp3</code>, <code>.aac</code>, <code>.m4a</code>, <code>.wav</code>, <code>.ogg</code>).
-        The player keeps both files locked together: same play/pause, same speed, and it auto-corrects drift as they play.
-        The video's own audio track (if any) is muted so you only hear this file.
-      </span>
+      <span class="hint"><code>.mp3</code> / <code>.aac</code> / <code>.m4a</code> / <code>.wav</code> / <code>.ogg</code> — kept frame-locked to the video with auto drift correction.</span>
     </div>
-
-    <div class="input-row">
-      <label class="input-label" for="subtitleUrl">
-        <span class="dot dot-sub"></span> Subtitles URL — optional
-      </label>
-      <input type="text" id="subtitleUrl" placeholder="https://example.com/subtitles.vtt" spellcheck="false"/>
-      <span class="hint">Supports <code>.vtt</code> (WebVTT) subtitle tracks.</span>
-    </div>
-
-    <div class="format-chips" id="formatSupport"></div>
   </div>
 
-  <!-- ── EMBED MODE ── -->
+  <!-- EMBED PANEL -->
   <div class="panel" id="panel-embed">
     <div class="input-row">
-      <label class="input-label" for="embedUrl">
-        <span class="dot dot-video"></span> Page URL or Embed URL
-      </label>
+      <label class="input-label" for="embedUrl"><span class="dot dot-e"></span> Embed / iFrame URL</label>
       <input type="text" id="embedUrl" placeholder="https://www.youtube.com/embed/dQw4w9WgXcQ" spellcheck="false"/>
-      <span class="hint">
-        Paste an embed URL (e.g. YouTube <code>/embed/ID</code>, Vimeo <code>/video/ID</code>, or any direct iframe-embeddable URL).
-        Non-embed page URLs are auto-converted for YouTube and Vimeo.
-      </span>
-    </div>
-    <div class="input-row">
-      <label class="input-label">
-        <span class="dot" style="background:var(--amber)"></span> Embed code — alternative
-      </label>
-      <textarea id="embedCode" rows="3" placeholder='<iframe src="..." ...></iframe>  ← paste full embed code here'></textarea>
-      <span class="hint">If you have an embed <code>&lt;iframe&gt;</code> snippet, paste it here instead of the URL above.</span>
+      <span class="hint">YouTube / Vimeo watch links are auto-converted. Any other iframe-embeddable URL works too.</span>
     </div>
   </div>
 
@@ -405,19 +151,18 @@
 
 <div class="status-bar">
   <div class="status-dot" id="statusDot"></div>
-  <span id="statusText">Choose a mode, paste your URL(s), and press Load &amp; Play.</span>
-  <span class="stream-type-badge" id="streamTypeBadge"></span>
-  <span class="sync-badge" id="syncBadge">🔊 audio muxed</span>
-  <span class="drift-readout" id="driftReadout"></span>
+  <span id="statusText">Choose a mode above, fill in the URL(s), then press Load &amp; Play.</span>
+  <span class="badge badge-sync" id="syncBadge">🔊 audio muxed</span>
+  <span class="drift-readout" id="driftEl"></span>
 </div>
 
-<div class="info-banner" id="infoBanner"></div>
+<div class="info" id="infoBanner"></div>
 
 <div class="player-wrap" id="playerWrap">
-  <!-- direct -->
+  <!-- mux -->
   <div class="video-shell" id="videoShell">
     <video id="video" controls playsinline></video>
-    <audio id="audio" preload="auto" style="display:none;"></audio>
+    <audio id="audio" preload="auto" style="display:none"></audio>
     <div class="overlay" id="playOverlay">
       <button class="overlay-btn" onclick="manualPlay()">▶ Click to play</button>
     </div>
@@ -425,37 +170,34 @@
       <div class="spinner"></div>
     </div>
   </div>
-
   <!-- embed -->
-  <div class="embed-shell" id="embedShell" style="display:none;">
-    <!-- iframe injected here -->
-  </div>
+  <div class="embed-shell" id="embedShell"></div>
 
-  <div class="controls-bar" id="controlsBar" style="display:none;">
-    <div class="ctrl-group" id="audioVolGroup" style="display:none;">
-      <span class="ctrl-label">Audio track vol</span>
-      <input type="range" id="audioVol" min="0" max="1" step="0.05" value="1" oninput="setAudioVolume(this.value)" style="width:90px;"/>
+  <div class="controls-bar" id="controlsBar">
+    <div class="ctrl-group" id="volGroup" style="display:none">
+      <span class="ctrl-label">Audio vol</span>
+      <input type="range" id="audioVol" min="0" max="1" step="0.05" value="1" oninput="audio.volume=+this.value" style="width:80px"/>
     </div>
-    <div class="separator" id="audioVolSep" style="display:none;"></div>
+    <div class="sep" id="volSep" style="display:none"></div>
     <div class="ctrl-group">
       <span class="ctrl-label">Speed</span>
-      <span class="chip" onclick="setSpeed(0.5, this)">0.5×</span>
-      <span class="chip" onclick="setSpeed(0.75, this)">0.75×</span>
-      <span class="chip active" id="chipSpeed1" onclick="setSpeed(1, this)">1×</span>
-      <span class="chip" onclick="setSpeed(1.25, this)">1.25×</span>
-      <span class="chip" onclick="setSpeed(1.5, this)">1.5×</span>
-      <span class="chip" onclick="setSpeed(2, this)">2×</span>
+      <span class="chip" onclick="setSpeed(0.5,this)">0.5×</span>
+      <span class="chip" onclick="setSpeed(0.75,this)">0.75×</span>
+      <span class="chip active" onclick="setSpeed(1,this)">1×</span>
+      <span class="chip" onclick="setSpeed(1.25,this)">1.25×</span>
+      <span class="chip" onclick="setSpeed(1.5,this)">1.5×</span>
+      <span class="chip" onclick="setSpeed(2,this)">2×</span>
     </div>
-    <div class="separator"></div>
+    <div class="sep"></div>
     <div class="ctrl-group">
       <span class="ctrl-label">Loop</span>
       <span class="chip" id="chipLoop" onclick="toggleLoop(this)">Off</span>
     </div>
-    <div class="separator"></div>
-    <div class="ctrl-group" id="resyncGroup" style="display:none;">
+    <div class="sep" id="resyncSep" style="display:none"></div>
+    <div class="ctrl-group" id="resyncGroup" style="display:none">
       <span class="chip" onclick="forceResync()">⟲ Resync audio</span>
     </div>
-    <div class="separator"></div>
+    <div class="sep"></div>
     <div class="ctrl-group">
       <span class="ctrl-label">PiP</span>
       <span class="chip" onclick="togglePip()">Enter PiP</span>
@@ -466,400 +208,195 @@
 <div class="diag" id="diagBox"></div>
 
 <div class="tips" id="tips">
-  <div class="tip">
-    <div class="tip-icon">🎬</div>
-    <div class="tip-text"><strong>Direct video</strong>Paste any direct video URL (.mp4, .webm, .mov) and it plays instantly in your browser.</div>
-  </div>
-  <div class="tip">
-    <div class="tip-icon">🔊</div>
-    <div class="tip-text"><strong>Separate audio file</strong>If your video is silent, add its matching audio file's URL — the player locks them together and corrects drift automatically.</div>
-  </div>
-  <div class="tip">
-    <div class="tip-icon">🔗</div>
-    <div class="tip-text"><strong>Embed anything</strong>YouTube, Vimeo, or any iframe-embeddable source. URLs are auto-converted.</div>
-  </div>
-  <div class="tip">
-    <div class="tip-icon">⌨️</div>
-    <div class="tip-text"><strong>Keyboard</strong>Space to play/pause, ←/→ to seek, ↑/↓ for volume, M to mute, F for fullscreen — all mirrored to the audio track.</div>
-  </div>
+  <div class="tip"><div class="tip-icon">🎬</div><div class="tip-text"><strong>Mux mode</strong>Paste a silent video URL and its matching audio URL — the player locks them together and auto-fixes drift every 400ms.</div></div>
+  <div class="tip"><div class="tip-icon">🔗</div><div class="tip-text"><strong>Embed mode</strong>Switch to the Embed tab and paste a YouTube, Vimeo, or any iframe URL — it loads inside a sandboxed iframe.</div></div>
+  <div class="tip"><div class="tip-icon">⌨️</div><div class="tip-text"><strong>Keyboard (mux mode)</strong>Space = play/pause · ←/→ seek · ↑/↓ volume · M mute · F fullscreen.</div></div>
 </div>
 
 <script>
-let currentMode  = "direct"; // direct | embed
-let hasSeparateAudio = false;
-let driftInterval = null;
-const DRIFT_TOLERANCE = 0.12; // seconds before we hard-correct
+const video=document.getElementById("video"),audio=document.getElementById("audio");
+const playerWrap=document.getElementById("playerWrap"),ctrlBar=document.getElementById("controlsBar");
+const tips=document.getElementById("tips"),playOverlay=document.getElementById("playOverlay");
+const bufferOver=document.getElementById("bufferOverlay"),statusDot=document.getElementById("statusDot");
+const statusTxt=document.getElementById("statusText"),diagBox=document.getElementById("diagBox");
+const syncBadge=document.getElementById("syncBadge"),driftEl=document.getElementById("driftEl");
+const videoShell=document.getElementById("videoShell"),embedShell=document.getElementById("embedShell");
+const playBtn=document.getElementById("playBtn"),infoBanner=document.getElementById("infoBanner");
 
-// ─────────────────────────────────────
-//  MODE SWITCHING
-// ─────────────────────────────────────
-function switchMode(m) {
-  currentMode = m;
-  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.mode === m));
-  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("active", p.id === "panel-" + m));
-  clearAll(true);
+let mode="mux",hasMux=false,driftInterval=null;
+const DRIFT=0.12;
+
+function switchTab(m){
+  mode=m;
+  document.getElementById("tab-mux").classList.toggle("active",m==="mux");
+  document.getElementById("tab-embed").classList.toggle("active",m==="embed");
+  document.getElementById("panel-mux").classList.toggle("active",m==="mux");
+  document.getElementById("panel-embed").classList.toggle("active",m==="embed");
+  clearAll();
 }
 
-// ─────────────────────────────────────
-//  FORMAT SUPPORT DETECTION
-// ─────────────────────────────────────
-(function detectFormats() {
-  const v = document.createElement("video");
-  const a = document.createElement("audio");
-  const formats = [
-    { label: "MP4/H.264", type: "video/mp4; codecs=\"avc1.42E01E\"", el: v },
-    { label: "WebM/VP9",  type: "video/webm; codecs=\"vp9\"", el: v },
-    { label: "MP3",       type: "audio/mpeg", el: a },
-    { label: "AAC/M4A",   type: "audio/mp4; codecs=\"mp4a.40.2\"", el: a },
-    { label: "WAV",       type: "audio/wav", el: a },
-    { label: "OGG audio", type: "audio/ogg; codecs=\"vorbis\"", el: a }
-  ];
-  const container = document.getElementById("formatSupport");
-  formats.forEach(f => {
-    const can = f.el.canPlayType(f.type);
-    if (can === "") return;
-    const chip = document.createElement("span");
-    chip.className = "fmt-chip " + (can === "probably" || can === "maybe" ? "supported" : "unsupported");
-    chip.textContent = f.label + (can === "probably" ? " ✓" : " ~");
-    container.appendChild(chip);
-  });
-})();
+function setStatus(msg,state){statusTxt.textContent=msg;statusDot.className="status-dot"+(state?" "+state:"")}
+function showDiag(h){diagBox.innerHTML=h;diagBox.classList.add("on")}
+function hideDiag(){diagBox.classList.remove("on");diagBox.innerHTML=""}
+function showInfo(h){infoBanner.innerHTML=h;infoBanner.classList.add("on")}
+function hideInfo(){infoBanner.classList.remove("on")}
+function showBuf(on){bufferOver.classList.toggle("on",on)}
 
-// ─────────────────────────────────────
-//  EMBED URL NORMALIZATION
-// ─────────────────────────────────────
-function normalizeEmbedUrl(raw) {
-  let m = raw.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  if (m) return `https://www.youtube.com/embed/${m[1]}?autoplay=1`;
-  m = raw.match(/vimeo\.com\/(\d+)/);
-  if (m) return `https://player.vimeo.com/video/${m[1]}?autoplay=1`;
-  if (raw.includes("/embed/") || raw.includes("player.") || raw.includes("iframe")) return raw;
+function normalizeEmbed(raw){
+  let m=raw.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if(m) return"https://www.youtube.com/embed/"+m[1]+"?autoplay=1";
+  m=raw.match(/vimeo\.com\/(\d+)/);
+  if(m) return"https://player.vimeo.com/video/"+m[1]+"?autoplay=1";
   return raw;
 }
 
-function extractSrcFromEmbedCode(html) {
-  const m = html.match(/src=["']([^"']+)["']/);
-  return m ? m[1] : null;
-}
-
-// ─────────────────────────────────────
-//  MAIN PLAYER START
-// ─────────────────────────────────────
-const video       = document.getElementById("video");
-const audio       = document.getElementById("audio");
-const playerWrap  = document.getElementById("playerWrap");
-const ctrlBar     = document.getElementById("controlsBar");
-const tips        = document.getElementById("tips");
-const playOverlay = document.getElementById("playOverlay");
-const bufferOver  = document.getElementById("bufferOverlay");
-const statusDot   = document.getElementById("statusDot");
-const statusTxt   = document.getElementById("statusText");
-const diagBox     = document.getElementById("diagBox");
-const typeBadge   = document.getElementById("streamTypeBadge");
-const syncBadge   = document.getElementById("syncBadge");
-const driftEl     = document.getElementById("driftReadout");
-const videoShell  = document.getElementById("videoShell");
-const embedShell  = document.getElementById("embedShell");
-const playBtn     = document.getElementById("playBtn");
-
-function setStatus(msg, state) {
-  statusTxt.textContent = msg;
-  statusDot.className   = "status-dot" + (state ? " " + state : "");
-}
-function showDiag(html) { diagBox.innerHTML = html; diagBox.classList.add("visible"); }
-function hideDiag()  { diagBox.classList.remove("visible"); diagBox.innerHTML = ""; }
-function showInfo(h) { const b=document.getElementById("infoBanner"); b.innerHTML=h; b.classList.add("visible"); }
-function hideInfo()  { document.getElementById("infoBanner").classList.remove("visible"); }
-function showBuffering(on) { bufferOver.classList.toggle("visible", on); }
-
-async function startPlayer() {
-  hideDiag(); hideInfo();
-  playBtn.disabled = true;
-
-  if (currentMode === "embed") {
-    startEmbed();
-    return;
-  }
-
-  const videoUrl = document.getElementById("videoUrl").value.trim();
-  const audioUrl = document.getElementById("audioUrl").value.trim();
-
-  if (!videoUrl) { setStatus("Video URL is required.", "error"); playBtn.disabled = false; return; }
-
-  if (location.protocol === "https:" && (videoUrl.startsWith("http://") || (audioUrl && audioUrl.startsWith("http://")))) {
-    showDiag("<strong>Blocked: mixed content.</strong> This page runs on <code>https://</code> but one of the file URLs uses <code>http://</code>. Browsers block this — use <code>https://</code> URLs.");
-    setStatus("Blocked by browser (mixed content).", "error");
-    playBtn.disabled = false; return;
-  }
-
-  destroyAll(true);
-  playerWrap.classList.add("visible");
-  videoShell.style.display = "";
-  embedShell.style.display = "none";
-  tips.style.display = "none";
-  setStatus("Loading…", "loading");
-  showBuffering(true);
-
-  await startDirect(videoUrl, audioUrl);
-
-  playBtn.disabled = false;
-}
-
-// ── DIRECT MODE (video, optionally + separate audio) ──
-function loadEl(el, url) {
-  return new Promise((resolve, reject) => {
-    const onErr  = () => { el.removeEventListener("loadedmetadata", onMeta); reject(); };
-    const onMeta = () => { el.removeEventListener("error", onErr); resolve(); };
-    el.addEventListener("loadedmetadata", onMeta, { once: true });
-    el.addEventListener("error", onErr, { once: true });
-    el.src = url;
-    el.load();
+function loadEl(el,url){
+  return new Promise((res,rej)=>{
+    const onE=()=>{el.removeEventListener("loadedmetadata",onM);rej()};
+    const onM=()=>{el.removeEventListener("error",onE);res()};
+    el.addEventListener("loadedmetadata",onM,{once:true});
+    el.addEventListener("error",onE,{once:true});
+    el.src=url;el.load();
   });
 }
 
-async function startDirect(videoUrl, audioUrl) {
-  hasSeparateAudio = !!audioUrl;
-  try {
-    const loads = [loadEl(video, videoUrl)];
-    if (hasSeparateAudio) loads.push(loadEl(audio, audioUrl));
+async function startPlayer(){
+  hideDiag();hideInfo();
+  playBtn.disabled=true;
+
+  if(mode==="embed"){
+    const url=document.getElementById("embedUrl").value.trim();
+    if(!url){setStatus("Paste an embed URL first.","error");playBtn.disabled=false;return}
+    doEmbed(url);
+    playBtn.disabled=false;
+    return;
+  }
+
+  // mux mode
+  const vUrl=document.getElementById("videoUrl").value.trim();
+  const aUrl=document.getElementById("audioUrl").value.trim();
+  if(!vUrl){setStatus("Video URL is required.","error");playBtn.disabled=false;return}
+  if(location.protocol==="https:"&&(vUrl.startsWith("http://")||(aUrl&&aUrl.startsWith("http://")))){
+    showDiag("<strong>Blocked: mixed content.</strong> Use <code>https://</code> URLs.");
+    setStatus("Blocked (mixed content).","error");playBtn.disabled=false;return;
+  }
+  destroyAll(true);
+  playerWrap.classList.add("on");
+  videoShell.classList.add("on");
+  embedShell.classList.remove("on");
+  tips.style.display="none";
+  setStatus("Loading…","loading");showBuf(true);
+  await doMux(vUrl,aUrl);
+  playBtn.disabled=false;
+}
+
+async function doMux(vUrl,aUrl){
+  hasMux=!!aUrl;
+  try{
+    const loads=[loadEl(video,vUrl)];
+    if(hasMux) loads.push(loadEl(audio,aUrl));
     await Promise.all(loads);
-
-    video.muted = hasSeparateAudio; // avoid double/conflicting audio
-
-    // Subtitle
-    const subUrl = document.getElementById("subtitleUrl").value.trim();
-    if (subUrl) {
-      const track = document.createElement("track");
-      track.kind    = "subtitles";
-      track.label   = "Subtitles";
-      track.srclang = "en";
-      track.src     = subUrl;
-      track.default = true;
-      video.appendChild(track);
-    }
-
-    const ext = videoUrl.split("?")[0].split(".").pop().toUpperCase();
-    typeBadge.textContent = ext || "VIDEO";
-    typeBadge.classList.add("visible");
-
-    if (hasSeparateAudio) {
-      syncBadge.classList.add("visible");
-      document.getElementById("audioVolGroup").style.display = "flex";
-      document.getElementById("audioVolSep").style.display = "block";
-      document.getElementById("resyncGroup").style.display = "flex";
-      setStatus("Ready — video + separate audio locked in sync.", "ok");
+    video.muted=hasMux;
+    if(hasMux){
+      syncBadge.classList.add("on");
+      document.getElementById("volGroup").style.display="flex";
+      document.getElementById("volSep").style.display="block";
+      document.getElementById("resyncGroup").style.display="flex";
+      document.getElementById("resyncSep").style.display="block";
+      setStatus("Ready — video + audio muxed.","ok");
+      attachSync();
     } else {
-      setStatus("Ready — " + (videoUrl.split("/").pop() || "video") + ".", "ok");
+      setStatus("Ready — "+(vUrl.split("/").pop()||"video")+".","ok");
     }
-
-    showBuffering(false);
-    ctrlBar.style.display = "flex";
+    showBuf(false);
+    ctrlBar.classList.add("on");
     attachVideoEvents();
     attemptPlay();
-  } catch {
-    showBuffering(false);
-    setStatus("Failed to load. Check the URL(s).", "error");
-    showDiag(
-      "<strong>Media could not be loaded.</strong> Common causes:" +
-      "<ul>" +
-      "<li>The server blocks cross-origin requests (CORS) for this file.</li>" +
-      "<li>The URL requires authentication or the file is offline.</li>" +
-      "<li>The format isn't supported by your browser (check the format badges above).</li>" +
-      "<li>Mixed content: the file is <code>http://</code> but this page is <code>https://</code>.</li>" +
-      "</ul>"
-    );
+  } catch{
+    showBuf(false);
+    setStatus("Failed to load. Check the URLs.","error");
+    showDiag("<strong>Media could not be loaded.</strong> Common causes:<ul><li>Server blocks cross-origin (CORS) requests.</li><li>URL needs auth or file is offline.</li><li>Format not supported by your browser.</li><li>Mixed content: <code>http://</code> on an <code>https://</code> page.</li></ul>");
   }
 }
 
-// ── EMBED MODE ──
-function startEmbed() {
-  const rawCode = document.getElementById("embedCode").value.trim();
-  const rawUrl  = document.getElementById("embedUrl").value.trim();
-
-  if (!rawCode && !rawUrl) {
-    setStatus("Embed URL or embed code is required.", "error");
-    playBtn.disabled = false; return;
-  }
-
+function doEmbed(raw){
   destroyAll(true);
-  playerWrap.classList.add("visible");
-  videoShell.style.display = "none";
-  embedShell.style.display = "block";
-  tips.style.display = "none";
-
-  let iframeSrc = "";
-  if (rawCode) {
-    iframeSrc = extractSrcFromEmbedCode(rawCode);
-    if (!iframeSrc) {
-      embedShell.innerHTML = rawCode;
-      setStatus("Embed injected.", "ok");
-      typeBadge.textContent = "EMBED"; typeBadge.classList.add("visible");
-      ctrlBar.style.display = "none";
-      playBtn.disabled = false;
-      return;
-    }
-  } else {
-    iframeSrc = normalizeEmbedUrl(rawUrl);
-  }
-
-  const iframe = document.createElement("iframe");
-  iframe.src             = iframeSrc;
-  iframe.allowFullscreen = true;
-  iframe.allow           = "autoplay; fullscreen; picture-in-picture; encrypted-media";
-  embedShell.innerHTML   = "";
-  embedShell.appendChild(iframe);
-
-  typeBadge.textContent = "EMBED"; typeBadge.classList.add("visible");
-  setStatus("Embed loaded — " + iframeSrc.split("/")[2], "ok");
-  ctrlBar.style.display = "none";
-  playBtn.disabled = false;
+  playerWrap.classList.add("on");
+  videoShell.classList.remove("on");
+  embedShell.classList.add("on");
+  tips.style.display="none";
+  ctrlBar.classList.remove("on");
+  const src=normalizeEmbed(raw);
+  const iframe=document.createElement("iframe");
+  iframe.src=src;iframe.allowFullscreen=true;
+  iframe.allow="autoplay; fullscreen; picture-in-picture; encrypted-media";
+  embedShell.innerHTML="";embedShell.appendChild(iframe);
+  setStatus("Embed loaded — "+src.split("/")[2],"ok");
 }
 
-// ─────────────────────────────────────
-//  VIDEO/AUDIO SYNC ENGINE
-// ─────────────────────────────────────
-function attachVideoEvents() {
-  video.addEventListener("waiting", () => showBuffering(true),  { passive: true });
-  video.addEventListener("playing", () => showBuffering(false), { passive: true });
-  video.addEventListener("stalled", () => showBuffering(true),  { passive: true });
-  video.addEventListener("canplay", () => showBuffering(false), { passive: true });
-
-  if (!hasSeparateAudio) return;
-
-  video.addEventListener("play", () => {
-    audio.currentTime = video.currentTime;
-    audio.play().catch(() => {});
-  });
-  video.addEventListener("pause", () => audio.pause());
-  video.addEventListener("seeking", () => { audio.currentTime = video.currentTime; });
-  video.addEventListener("ratechange", () => { audio.playbackRate = video.playbackRate; });
-  video.addEventListener("volumechange", () => { /* video muted, volume slider controls audio */ });
-
-  if (driftInterval) clearInterval(driftInterval);
-  driftInterval = setInterval(() => {
-    if (video.paused || audio.paused) return;
-    const drift = video.currentTime - audio.currentTime;
-    const abs = Math.abs(drift);
-    driftEl.textContent = "drift " + (drift >= 0 ? "+" : "") + drift.toFixed(2) + "s";
-    driftEl.classList.toggle("warn", abs > DRIFT_TOLERANCE);
-    if (abs > DRIFT_TOLERANCE) {
-      audio.currentTime = video.currentTime;
-    }
-  }, 400);
+function attachVideoEvents(){
+  video.addEventListener("waiting",()=>showBuf(true),{passive:true});
+  video.addEventListener("playing",()=>showBuf(false),{passive:true});
+  video.addEventListener("stalled",()=>showBuf(true),{passive:true});
+  video.addEventListener("canplay",()=>showBuf(false),{passive:true});
 }
 
-function forceResync() {
-  if (!hasSeparateAudio) return;
-  audio.currentTime = video.currentTime;
-  if (!video.paused) audio.play().catch(() => {});
-  showInfo("🔁 Audio resynced to video position.");
+function attachSync(){
+  video.addEventListener("play",()=>{audio.currentTime=video.currentTime;audio.play().catch(()=>{})});
+  video.addEventListener("pause",()=>audio.pause());
+  video.addEventListener("seeking",()=>{audio.currentTime=video.currentTime});
+  video.addEventListener("ratechange",()=>{audio.playbackRate=video.playbackRate});
+  if(driftInterval) clearInterval(driftInterval);
+  driftInterval=setInterval(()=>{
+    if(video.paused||audio.paused) return;
+    const d=video.currentTime-audio.currentTime;
+    driftEl.textContent="drift "+(d>=0?"+":"")+d.toFixed(2)+"s";
+    driftEl.classList.toggle("warn",Math.abs(d)>DRIFT);
+    if(Math.abs(d)>DRIFT) audio.currentTime=video.currentTime;
+  },400);
 }
 
-function setAudioVolume(v) {
-  audio.volume = parseFloat(v);
+function forceResync(){if(!hasMux)return;audio.currentTime=video.currentTime;if(!video.paused)audio.play().catch(()=>{});showInfo("🔁 Audio resynced.")}
+function attemptPlay(){const p=video.play();if(p&&p.catch){p.then(()=>playOverlay.classList.remove("on")).catch(()=>playOverlay.classList.add("on"))}}
+function manualPlay(){playOverlay.classList.remove("on");video.play().catch(()=>{});if(hasMux)audio.play().catch(()=>{})}
+function setSpeed(r,chip){video.playbackRate=r;if(hasMux)audio.playbackRate=r;chip.parentElement.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));chip.classList.add("active")}
+function toggleLoop(chip){video.loop=!video.loop;if(hasMux)audio.loop=video.loop;chip.textContent=video.loop?"On":"Off";chip.classList.toggle("active",video.loop)}
+async function togglePip(){try{document.pictureInPictureElement?await document.exitPictureInPicture():await video.requestPictureInPicture()}catch{showInfo("PiP not supported in this browser.")}}
+
+function destroyAll(keep){
+  if(driftInterval){clearInterval(driftInterval);driftInterval=null}
+  video.pause();audio.pause();
+  while(video.firstChild)video.removeChild(video.firstChild);
+  video.removeAttribute("src");video.load();
+  audio.removeAttribute("src");audio.load();
+  embedShell.innerHTML="";
+  playOverlay.classList.remove("on");bufferOver.classList.remove("on");
+  syncBadge.classList.remove("on");driftEl.textContent="";
+  document.getElementById("volGroup").style.display="none";
+  document.getElementById("volSep").style.display="none";
+  document.getElementById("resyncGroup").style.display="none";
+  document.getElementById("resyncSep").style.display="none";
+  hasMux=false;
+  if(!keep){playerWrap.classList.remove("on");ctrlBar.classList.remove("on")}
 }
 
-function attemptPlay() {
-  const p = video.play();
-  if (p && p.catch) {
-    p.then(() => playOverlay.classList.remove("visible"))
-     .catch(() => playOverlay.classList.add("visible"));
-  }
+function clearAll(){
+  destroyAll(false);hideDiag();hideInfo();
+  tips.style.display="grid";
+  ["videoUrl","audioUrl","embedUrl"].forEach(id=>{const e=document.getElementById(id);if(e)e.value=""});
+  setStatus("Choose a mode above, fill in the URL(s), then press Load & Play.");
 }
 
-function manualPlay() {
-  playOverlay.classList.remove("visible");
-  video.play().catch(() => {});
-  if (hasSeparateAudio) audio.play().catch(() => {});
-}
-
-function setSpeed(rate, chip) {
-  video.playbackRate = rate;
-  if (hasSeparateAudio) audio.playbackRate = rate;
-  chip.parentElement.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-  chip.classList.add("active");
-}
-
-function toggleLoop(chip) {
-  video.loop = !video.loop;
-  if (hasSeparateAudio) audio.loop = video.loop;
-  chip.textContent = video.loop ? "On" : "Off";
-  chip.classList.toggle("active", video.loop);
-}
-
-async function togglePip() {
-  try {
-    if (document.pictureInPictureElement) {
-      await document.exitPictureInPicture();
-    } else {
-      await video.requestPictureInPicture();
-    }
-  } catch (e) {
-    showInfo("Picture-in-Picture not supported in this browser.");
-  }
-}
-
-// ─────────────────────────────────────
-//  DESTROY / CLEAR
-// ─────────────────────────────────────
-function destroyAll(keepWrapper) {
-  if (driftInterval) { clearInterval(driftInterval); driftInterval = null; }
-  video.pause();
-  audio.pause();
-  while (video.firstChild) video.removeChild(video.firstChild);
-  video.removeAttribute("src");
-  video.load();
-  audio.removeAttribute("src");
-  audio.load();
-  embedShell.innerHTML = "";
-  playOverlay.classList.remove("visible");
-  bufferOver.classList.remove("visible");
-  typeBadge.classList.remove("visible");
-  syncBadge.classList.remove("visible");
-  driftEl.textContent = "";
-  document.getElementById("audioVolGroup").style.display = "none";
-  document.getElementById("audioVolSep").style.display = "none";
-  document.getElementById("resyncGroup").style.display = "none";
-  hasSeparateAudio = false;
-  if (!keepWrapper) {
-    playerWrap.classList.remove("visible");
-    ctrlBar.style.display = "none";
-  }
-}
-
-function clearAll(switchOnly) {
-  destroyAll(false);
-  hideDiag(); hideInfo();
-  tips.style.display = "grid";
-  playerWrap.classList.remove("visible");
-  ctrlBar.style.display = "none";
-  if (!switchOnly) {
-    ["videoUrl","audioUrl","subtitleUrl","embedUrl","embedCode"].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = "";
-    });
-  }
-  setStatus("Choose a mode, paste your URL(s), and press Load & Play.");
-}
-
-// ── Keyboard shortcuts ──
-document.addEventListener("keydown", e => {
-  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
-    if (e.key === "Enter") { e.preventDefault(); startPlayer(); }
-    return;
-  }
-  if (!playerWrap.classList.contains("visible")) return;
-  if (e.key === " ") {
-    e.preventDefault();
-    if (video.paused) { video.play(); if (hasSeparateAudio) audio.play().catch(()=>{}); }
-    else { video.pause(); if (hasSeparateAudio) audio.pause(); }
-  }
-  if (e.key === "ArrowLeft")  { e.preventDefault(); video.currentTime = Math.max(0, video.currentTime - 5); if (hasSeparateAudio) audio.currentTime = video.currentTime; }
-  if (e.key === "ArrowRight") { e.preventDefault(); video.currentTime = video.currentTime + 5; if (hasSeparateAudio) audio.currentTime = video.currentTime; }
-  if (e.key === "ArrowUp")    { e.preventDefault(); if (hasSeparateAudio) audio.volume = Math.min(1, audio.volume + 0.1); else video.volume = Math.min(1, video.volume + 0.1); }
-  if (e.key === "ArrowDown")  { e.preventDefault(); if (hasSeparateAudio) audio.volume = Math.max(0, audio.volume - 0.1); else video.volume = Math.max(0, video.volume - 0.1); }
-  if (e.key === "m" || e.key === "M") { if (hasSeparateAudio) audio.muted = !audio.muted; else video.muted = !video.muted; }
-  if (e.key === "f" || e.key === "F") { video.requestFullscreen && video.requestFullscreen(); }
+document.addEventListener("keydown",e=>{
+  if(e.target.tagName==="INPUT"){if(e.key==="Enter"){e.preventDefault();startPlayer()}return}
+  if(!playerWrap.classList.contains("on")||!videoShell.classList.contains("on")) return;
+  if(e.key===" "){e.preventDefault();if(video.paused){video.play();if(hasMux)audio.play().catch(()=>{})}else{video.pause();if(hasMux)audio.pause()}}
+  if(e.key==="ArrowLeft"){e.preventDefault();video.currentTime=Math.max(0,video.currentTime-5);if(hasMux)audio.currentTime=video.currentTime}
+  if(e.key==="ArrowRight"){e.preventDefault();video.currentTime+=5;if(hasMux)audio.currentTime=video.currentTime}
+  if(e.key==="ArrowUp"){e.preventDefault();if(hasMux)audio.volume=Math.min(1,audio.volume+0.1);else video.volume=Math.min(1,video.volume+0.1)}
+  if(e.key==="ArrowDown"){e.preventDefault();if(hasMux)audio.volume=Math.max(0,audio.volume-0.1);else video.volume=Math.max(0,video.volume-0.1)}
+  if(e.key==="m"||e.key==="M"){if(hasMux)audio.muted=!audio.muted;else video.muted=!video.muted}
+  if(e.key==="f"||e.key==="F"){video.requestFullscreen&&video.requestFullscreen()}
 });
 </script>
 </body>
