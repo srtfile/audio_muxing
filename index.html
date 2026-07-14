@@ -1,316 +1,85 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Anime Stream Player</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Anime Stream Embed</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: #0f0f0f;
-      color: #e0e0e0;
-      font-family: 'Segoe UI', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-
-    h1 {
-      font-size: 1.3rem;
-      color: #c084fc;
-      margin-bottom: 16px;
-      text-align: center;
-      letter-spacing: 1px;
-    }
-
-    .source-tag {
-      font-size: 0.75rem;
-      color: #666;
-      margin-bottom: 20px;
-      word-break: break-all;
-      text-align: center;
-    }
-
-    .player-wrap {
-      width: 100%;
-      max-width: 960px;
-      background: #000;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 0 40px rgba(192,132,252,0.15);
-    }
-
-    iframe {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      display: block;
-      background: #000;
-      border: 0;
-    }
-
-    .controls {
-      width: 100%;
-      max-width: 960px;
-      margin-top: 18px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-    }
-
-    .control-box {
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
-      border-radius: 10px;
-      padding: 14px 18px;
-      flex: 1;
-      min-width: 200px;
-    }
-
-    .control-box h3 {
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #888;
-      margin-bottom: 10px;
-    }
-
-    .btn-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    button {
-      background: #2a2a2a;
-      color: #ccc;
-      border: 1px solid #3a3a3a;
-      border-radius: 6px;
-      padding: 7px 14px;
-      font-size: 0.82rem;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    button:hover { background: #3a3a3a; color: #fff; }
-
-    button.active {
-      background: #7c3aed;
-      border-color: #c084fc;
-      color: #fff;
-      font-weight: 600;
-    }
-
-    .status-bar {
-      width: 100%;
-      max-width: 960px;
-      margin-top: 12px;
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
-      border-radius: 8px;
-      padding: 10px 16px;
-      font-size: 0.8rem;
-      color: #888;
-    }
-
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 20px; background: #0f0f0f; color: #e0e0e0; font-family: "Segoe UI", sans-serif; display: flex; flex-direction: column; align-items: center; }
+    h1 { margin: 0 0 16px; font-size: 1.3rem; color: #c084fc; }
+    .player-wrap, .controls, .status-bar { width: 100%; max-width: 960px; }
+    .player-wrap { overflow: hidden; border-radius: 10px; background: #000; box-shadow: 0 0 40px rgba(192,132,252,.15); }
+    #videoEmbed { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; background: #000; }
+    /* The audio stream is also embedded in an iframe; it is hidden because it has no visual output. */
+    #audioEmbed { position: absolute; width: 1px; height: 1px; border: 0; opacity: 0; pointer-events: none; }
+    .controls { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 14px; }
+    .control-box { flex: 1; min-width: 200px; padding: 14px 18px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; }
+    h3 { margin: 0 0 10px; font-size: .78rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+    .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    button { padding: 7px 14px; color: #ccc; background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 6px; cursor: pointer; }
+    button:hover { color: #fff; background: #3a3a3a; }
+    button.active { color: #fff; background: #7c3aed; border-color: #c084fc; font-weight: 600; }
+    .status-bar { margin-top: 12px; padding: 10px 16px; color: #888; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; font-size: .8rem; }
     .status-bar span { color: #c084fc; font-weight: 600; }
   </style>
 </head>
 <body>
-
-  <h1>🎌 Anime Stream Player</h1>
-  <div class="source-tag">Source: https://anizone.to/anime/spjuxray/3</div>
-
+  <h1>🎌 Anime Stream Embed</h1>
   <div class="player-wrap">
-    <!-- Both the video and matching audio URLs are loaded inside this iframe. -->
-    <iframe id="mediaFrame" title="Anime media player" allow="autoplay; fullscreen"></iframe>
+    <iframe id="videoEmbed" title="Video embed" allow="autoplay; fullscreen" loading="eager"></iframe>
   </div>
+  <iframe id="audioEmbed" title="Audio embed" allow="autoplay" loading="eager"></iframe>
 
   <div class="controls">
-
-    <div class="control-box">
-      <h3>🎬 Video Quality</h3>
-      <div class="btn-group" id="qualityBtns"></div>
-    </div>
-
-    <div class="control-box">
-      <h3>🔊 Audio Language</h3>
-      <div class="btn-group" id="audioBtns"></div>
-    </div>
-
+    <div class="control-box"><h3>🎬 Video Quality</h3><div class="btn-group" id="qualityBtns"></div></div>
+    <div class="control-box"><h3>🔊 Audio Language</h3><div class="btn-group" id="audioBtns"></div></div>
   </div>
+  <div class="status-bar">Status: <span id="status">Loading direct video and audio embeds…</span></div>
 
-  <div class="status-bar" id="statusBar">
-    Status: <span>Initializing...</span>
-  </div>
-
-<script>
-const STREAMS = {
-  "videos": [
-    {
-      "label": "480x360 / 946kbps",
-      "url": "https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/video/360/playlist.m3u8"
-    },
-    {
-      "label": "960x720 / 2376kbps",
-      "url": "https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/video/720/playlist.m3u8"
-    },
-    {
-      "label": "1440x1080 / 3476kbps",
-      "url": "https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/video/1080/playlist.m3u8"
-    }
-  ],
-  "audio": [
-    {
-      "name": "Japanese",
-      "lang": "ja",
-      "url": "https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/audio/0_ja/playlist.m3u8"
-    },
-    {
-      "name": "English",
-      "lang": "en",
-      "url": "https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/audio/1_en/playlist.m3u8"
-    }
-  ]
-};
-
-const statusBar = document.getElementById("statusBar");
-const mediaFrame = document.getElementById("mediaFrame");
-
-// ── Current selections ────────────────────────────────────────────
-let currentVideoUrl = STREAMS.videos.length > 0 ? STREAMS.videos[STREAMS.videos.length - 1].url : null;
-let currentAudioUrl = null;
-
-// Pick default audio: prefer English, else first track
-const defaultAudio = STREAMS.audio.find(a => ["en","eng"].includes(a.lang.toLowerCase()))
-                  || STREAMS.audio[0]
-                  || null;
-if (defaultAudio) currentAudioUrl = defaultAudio.url;
-
-function setStatus(msg) {
-  statusBar.innerHTML = "Status: <span>" + msg + "</span>";
-}
-
-function sendToPlayer(type, payload = {}) {
-  mediaFrame.contentWindow.postMessage({ type, ...payload }, "*");
-}
-
-// ── Build quality buttons ─────────────────────────────────────────
-function buildQualityButtons() {
-  const wrap = document.getElementById("qualityBtns");
-  STREAMS.videos.forEach((v, idx) => {
-    const btn = document.createElement("button");
-    btn.textContent = v.label;
-    if (v.url === currentVideoUrl) btn.classList.add("active");
-    btn.onclick = () => {
-      currentVideoUrl = v.url;
-      document.querySelectorAll("#qualityBtns button").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      sendToPlayer("set-video", { url: v.url });
+  <script>
+    const STREAMS = {
+      videos: [
+        { label: '480x360 / 946kbps', url: 'https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/video/360/playlist.m3u8' },
+        { label: '960x720 / 2376kbps', url: 'https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/video/720/playlist.m3u8' },
+        { label: '1440x1080 / 3476kbps', url: 'https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/video/1080/playlist.m3u8' }
+      ],
+      audio: [
+        { name: 'Japanese', lang: 'ja', url: 'https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/audio/0_ja/playlist.m3u8' },
+        { name: 'English', lang: 'en', url: 'https://seiryuu.vid-cdn.xyz/8d3f2c88-e5a6-4806-8f89-14f8e09b5238/audio/1_en/playlist.m3u8' }
+      ]
     };
-    wrap.appendChild(btn);
-  });
-}
 
-// ── Build audio buttons ───────────────────────────────────────────
-function buildAudioButtons() {
-  const wrap = document.getElementById("audioBtns");
+    const videoEmbed = document.getElementById('videoEmbed');
+    const audioEmbed = document.getElementById('audioEmbed');
+    const status = document.getElementById('status');
+    let selectedVideo = STREAMS.videos.at(-1);
+    let selectedAudio = STREAMS.audio.find(track => track.lang === 'en') || STREAMS.audio[0];
 
-  // "Auto (Master)" button — uses the original master with Japanese default
-  // We skip this to keep it simple: just show extracted audio tracks
+    function loadEmbeds() {
+      videoEmbed.src = selectedVideo.url;
+      audioEmbed.src = selectedAudio.url;
+      status.textContent = `Embedded ${selectedVideo.label} video with ${selectedAudio.name} audio.`;
+    }
 
-  STREAMS.audio.forEach(a => {
-    const btn = document.createElement("button");
-    const isEn = ["en","eng"].includes(a.lang.toLowerCase());
-    btn.textContent = (isEn ? "🇬🇧 " : "🇯🇵 ") + a.name;
-    if (a.url === currentAudioUrl) btn.classList.add("active");
-    btn.onclick = () => {
-      currentAudioUrl = a.url;
-      document.querySelectorAll("#audioBtns button").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      sendToPlayer("set-audio", { url: a.url, name: a.name });
-    };
-    wrap.appendChild(btn);
-  });
-}
+    function makeButtons(items, containerId, selected, onSelect, label) {
+      const container = document.getElementById(containerId);
+      items.forEach(item => {
+        const button = document.createElement('button');
+        button.textContent = label(item);
+        button.classList.toggle('active', item === selected);
+        button.addEventListener('click', () => {
+          container.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+          button.classList.add('active');
+          onSelect(item);
+        });
+        container.appendChild(button);
+      });
+    }
 
-// ── Init ──────────────────────────────────────────────────────────
-window.addEventListener("message", event => {
-  if (event.source !== mediaFrame.contentWindow || !event.data || event.data.type !== "player-status") return;
-  setStatus(event.data.message);
-});
-
-mediaFrame.srcdoc = `<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"><\/script>
-<style>html,body{margin:0;background:#000;height:100%;overflow:hidden}video{width:100%;height:100%;display:block;background:#000}</style>
-</head><body><video id="video" controls playsinline crossorigin="anonymous"></video><audio id="audio" preload="auto" crossorigin="anonymous"></audio>
-<script>
-const video = document.getElementById('video'), audio = document.getElementById('audio');
-let videoHls, audioHls, videoUrl = ${JSON.stringify(currentVideoUrl)}, audioUrl = ${JSON.stringify(currentAudioUrl)}, audioName = ${JSON.stringify(defaultAudio ? defaultAudio.name : "")};
-let syncing = false, resumeAfterLoad = false;
-// The original videoUrl/audioUrl remain in this iframe. This local relay is
-// needed because the CDN only allows CORS requests from anizone.to.
-const relay = url => 'http://127.0.0.1:8787/hls?url=' + encodeURIComponent(url);
-const report = message => parent.postMessage({type:'player-status', message}, '*');
-const destroy = instance => { if (instance) instance.destroy(); };
-function loadHls(media, url, kind) {
-  if (Hls.isSupported()) {
-    const hls = new Hls({enableWorker:true, lowLatencyMode:false, backBufferLength:30, maxBufferLength:20});
-    hls.loadSource(relay(url)); hls.attachMedia(media);
-    hls.on(Hls.Events.ERROR, (_, data) => {
-      if (data.fatal) report(kind + ' error: ' + data.type + '. Start the local relay: node hls-proxy.mjs');
-    });
-    return hls;
-  }
-  if (media.canPlayType('application/vnd.apple.mpegurl')) { media.src = url; return null; }
-  report('This browser cannot play HLS streams.'); return null;
-}
-function align(hard = false) {
-  if (syncing || !Number.isFinite(video.currentTime) || !Number.isFinite(audio.currentTime)) return;
-  const drift = audio.currentTime - video.currentTime;
-  if (hard || Math.abs(drift) > .35) { syncing = true; audio.currentTime = video.currentTime; audio.playbackRate = video.playbackRate; syncing = false; }
-  else if (Math.abs(drift) > .08) audio.playbackRate = Math.max(.9, Math.min(1.1, video.playbackRate - drift * .25));
-  else audio.playbackRate = video.playbackRate;
-}
-async function playTogether() {
-  align(true);
-  try { await audio.play(); await video.play(); } catch (_) { report('Press play to start both streams.'); }
-}
-function loadAudio(keepTime = 0, shouldPlay = false) {
-  destroy(audioHls); audioHls = undefined; audio.pause();
-  if (!audioUrl) return;
-  audioHls = loadHls(audio, audioUrl, 'Audio');
-  audio.addEventListener('canplay', () => { audio.currentTime = keepTime; align(true); if (shouldPlay) playTogether(); report('Ready — ' + (audioName || 'selected') + ' audio'); }, {once:true});
-}
-function loadVideo(keepTime = 0, shouldPlay = false) {
-  destroy(videoHls); videoHls = undefined; video.pause();
-  video.muted = true; // video rendition stays silent; the paired audio element is the only audio output.
-  videoHls = loadHls(video, videoUrl, 'Video');
-  video.addEventListener('canplay', () => { video.currentTime = keepTime; loadAudio(keepTime, shouldPlay); }, {once:true});
-}
-video.addEventListener('play', () => { if (audio.paused) { audio.currentTime = video.currentTime; audio.play().catch(() => report('Press play to enable audio.')); } });
-video.addEventListener('pause', () => { if (!video.seeking) audio.pause(); });
-video.addEventListener('seeking', () => { audio.currentTime = video.currentTime; });
-video.addEventListener('seeked', () => align(true));
-video.addEventListener('timeupdate', () => align());
-video.addEventListener('ratechange', () => { audio.playbackRate = video.playbackRate; });
-video.addEventListener('volumechange', () => { audio.volume = video.volume; audio.muted = video.muted; });
-audio.addEventListener('ended', () => video.pause());
-window.addEventListener('message', event => {
-  const msg = event.data || {}, time = video.currentTime || 0, playing = !video.paused;
-  if (msg.type === 'set-video' && msg.url) { videoUrl = msg.url; report('Switching video quality…'); loadVideo(time, playing); }
-  if (msg.type === 'set-audio' && msg.url) { audioUrl = msg.url; audioName = msg.name || 'selected'; report('Switching audio…'); loadAudio(time, playing); }
-});
-loadVideo();
-<\/script></body></html>`;
-
-buildQualityButtons();
-buildAudioButtons();
-if (!currentVideoUrl) setStatus("No video streams found.");
-</script>
-
+    makeButtons(STREAMS.videos, 'qualityBtns', selectedVideo, video => { selectedVideo = video; loadEmbeds(); }, item => item.label);
+    makeButtons(STREAMS.audio, 'audioBtns', selectedAudio, audio => { selectedAudio = audio; loadEmbeds(); }, item => (item.lang === 'en' ? '🇬🇧 ' : '🇯🇵 ') + item.name);
+    loadEmbeds();
+  </script>
 </body>
 </html>
