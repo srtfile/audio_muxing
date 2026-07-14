@@ -251,13 +251,18 @@ mediaFrame.srcdoc = `<!doctype html>
 const video = document.getElementById('video'), audio = document.getElementById('audio');
 let videoHls, audioHls, videoUrl = ${JSON.stringify(currentVideoUrl)}, audioUrl = ${JSON.stringify(currentAudioUrl)}, audioName = ${JSON.stringify(defaultAudio ? defaultAudio.name : "")};
 let syncing = false, resumeAfterLoad = false;
+// The original videoUrl/audioUrl remain in this iframe. This local relay is
+// needed because the CDN only allows CORS requests from anizone.to.
+const relay = url => 'http://127.0.0.1:8787/hls?url=' + encodeURIComponent(url);
 const report = message => parent.postMessage({type:'player-status', message}, '*');
 const destroy = instance => { if (instance) instance.destroy(); };
 function loadHls(media, url, kind) {
   if (Hls.isSupported()) {
     const hls = new Hls({enableWorker:true, lowLatencyMode:false, backBufferLength:30, maxBufferLength:20});
-    hls.loadSource(url); hls.attachMedia(media);
-    hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) report(kind + ' error: ' + data.type); });
+    hls.loadSource(relay(url)); hls.attachMedia(media);
+    hls.on(Hls.Events.ERROR, (_, data) => {
+      if (data.fatal) report(kind + ' error: ' + data.type + '. Start the local relay: node hls-proxy.mjs');
+    });
     return hls;
   }
   if (media.canPlayType('application/vnd.apple.mpegurl')) { media.src = url; return null; }
